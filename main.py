@@ -1,11 +1,18 @@
 import argparse
+import logging
 import logging.handlers
 import pickle
 import sys
-from timeit import timeit as timer
+
 
 import entsoe_client
 
+rootLogger = logging.getLogger('')
+
+rootLogger.setLevel(logging.INFO)
+
+socketHandler = logging.handlers.SocketHandler('localhost', logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+rootLogger.addHandler(socketHandler)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Unavailability in Transmission Grid'
@@ -15,6 +22,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    """
     rootLogger = logging.getLogger('')
     if args.verbose:
         rootLogger.setLevel(logging.INFO)
@@ -23,19 +31,18 @@ if __name__ == "__main__":
     rootLogger.addHandler(socketHandler)
 
     logging.getLogger(__name__)
-
+    """
     logging.info("------------ Session ------------")
 
     entsoe = entsoe_client.API(items_per_page=100)
 
     from_date = "01.01.2019"
-    to_date = "08.01.2019"
+    to_date = "01.06.2019"
     asset_type = ["AC Link", "DC Link", "Substation", "Transformer", "Not specified"]
     outage_status = ["Active"]
     outage_type = ["Forced", "Planned"]
     country = "DE"
     print(f"Get data from {from_date} - {to_date}")
-    t_start = timer()
 
     """
     from_date, to_date, asset_type=None,
@@ -43,7 +50,7 @@ if __name__ == "__main__":
                                          country=None, area_type="BORDER_CTA")
     """
     try:
-        data = entsoe.transmission_grid_unavailability(from_date, to_date, country=country, outage_status=outage_status)
+        data = entsoe.transmission_grid_unavailability(from_date, to_date, outage_status=outage_status)
         pickle.dump(data, open("data.pckl", "wb"))
         data_df = entsoe.data_table_to_df(data)
 
