@@ -143,6 +143,8 @@ class API(object):
 
         table_data = []
 
+        print(borders)
+
         params = (
             ('name', ''),
             ('defaultValue', 'false'),
@@ -477,7 +479,10 @@ class API(object):
             country_borders = []
             for i in inputs:
                 border = i.get("value")
+                if 'on' in border: # ignore this string in borders
+                    continue
                 country_borders.append(border)
+                print(border)
             borders.update({country: country_borders})
 
         return borders
