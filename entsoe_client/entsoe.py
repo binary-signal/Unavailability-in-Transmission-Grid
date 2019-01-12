@@ -13,9 +13,10 @@ from .exceptions import *
 
 class API(object):
     """
-    API consumer Entsoe
+    API consumer for Entsoe
     """
-    __base_url = "https://transparency.entsoe.eu/outage-domain/r2/unavailabilityInTransmissionGrid/"
+    __base_url = "https://transparency.entsoe.eu/outage-domain/r2/" \
+                 "unavailabilityInTransmissionGrid/"
     __endpoints = {"getDataTableData/": "POST",
                    "detail": "GET",
                    "getDetailCurve/": "POST"}
@@ -45,11 +46,10 @@ class API(object):
                      "Cancelled": "A09",
                      "Withdrawn": "A13"}
 
-    countries = ['AL', 'AT', 'BY', 'BE', 'BA', 'BG', 'HR', 'CZ', 'DK', 'EE', 'MK', 'FI', 'FR', 'DE', 'GR', 'HU',
-                 'IE',
-                 'IT', 'LV', 'LT', 'LU', 'MT', 'MD', 'ME', 'NL', 'NO', 'PL', 'PT', 'RO', 'RU', 'RS', 'SK', 'SI',
-                 'ES',
-                 'SE', 'CH', 'TR', 'UA', 'UK']
+    countries = ['AL', 'AT', 'BY', 'BE', 'BA', 'BG', 'HR', 'CZ', 'DK', 'EE',
+                 'MK', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT',
+                 'LU', 'MT', 'MD', 'ME', 'NL', 'NO', 'PL', 'PT', 'RO', 'RU',
+                 'RS', 'SK', 'SI', 'ES', 'SE', 'CH', 'TR', 'UA', 'UK']
 
     __pagination = [10, 25, 50, 100]
 
@@ -80,8 +80,10 @@ class API(object):
                 raise error from None
             else:
                 if "errors" in error_data:
-                    logging.error("post api call bad params " + error_data["errors"][0]["message"])
-                    raise EntsoeApiBadParams(error_data["errors"][0]["message"]) from None
+                    logging.error("post api call bad params "
+                                  + error_data["errors"][0]["message"])
+                    raise EntsoeApiBadParams(
+                        error_data["errors"][0]["message"]) from None
         else:
             return json.loads(response.text)
 
@@ -92,7 +94,8 @@ class API(object):
         """
 
         try:
-            response = requests.get(url, params=params, headers=cls.__get_headers)
+            response = requests.get(url, params=params,
+                                    headers=cls.__get_headers)
             response.raise_for_status()
         except (requests.HTTPError, requests.ConnectionError) as error:
             logging.error(error)
@@ -121,9 +124,10 @@ class API(object):
         else:
             return cls.__get(url, params)
 
-    def transmission_grid_unavailability(self, from_date, to_date, asset_type=None,
-                                         outage_type=None, outage_status=None,
-                                         country=None, area_type="BORDER_CTA"):
+    def transmission_grid_unavailability(self, from_date, to_date, country=None,
+                                         asset_type=None, outage_type=None,
+                                         outage_status=None,
+                                         area_type="BORDER_CTA"):
         """
         Implements api method to get unavailability in transmission grid
         """
@@ -163,15 +167,19 @@ class API(object):
             ('dateTime.dateTime', f'{from_date} 00:00|UTC|DAY'),
             ('dateTime.endDateTime', f'{to_date} 00:00|UTC|DAY'),
             ('border.values', borders),
-            ('assetType.values', [self.asset_type[param] for param in asset_type if param in self.asset_type]),
-            ('outageType.values', [self.outage_type[param] for param in outage_type if param in self.outage_type]),
-            ('outageStatus.values',
-             [self.outage_status[param] for param in outage_status if param in self.outage_status]),
+            ('assetType.values', [self.asset_type[param] for param in asset_type
+                                  if param in self.asset_type]),
+            ('outageType.values', [self.outage_type[param] for param in
+                                   outage_type if param in self.outage_type]),
+            ('outageStatus.values', [self.outage_status[param]
+                                     for param in outage_status if param
+                                     in self.outage_status]),
         )
 
         data = {"sEcho": 2,  # TODO why the fuck for is this key ?
                 "iColumns": 7,
-                "sColumns": "status,nature,unavailabilityInterval,inArea,outArea,newNTC,",
+                "sColumns": "status,nature,unavailabilityInterval,"
+                            "inArea,outArea,newNTC,",
                 "iDisplayStart": 0,
                 "iDisplayLength": self.items_per_page,
                 "amDataProp": [0, 1, 2, 3, 4, 5, 6]}
@@ -194,7 +202,8 @@ class API(object):
                 progress = 0
 
             print(f"[1/3] data progress {round(100 * progress, 2)}%", end="\r")
-            logging.info(f"progress [{have} / {json_data['iTotalRecords']}] data")
+            logging.info(f"progress [{have} / {json_data['iTotalRecords']}] "
+                         f"data")
 
             if have == json_data['iTotalRecords']:
                 print("\n \n")
@@ -249,7 +258,8 @@ class API(object):
     @staticmethod
     def data_table_to_df(data):
         """
-        Returns a pandas dataframe from  unavailability data in transmission grid
+        Returns a pandas dataframe from  unavailability data in
+        transmission grid
         """
         for d in data:
             interval = d['unavailabilityInterval']
@@ -347,7 +357,9 @@ class API(object):
             # logging.warning("Row id {} has missing data, fill in missing values".format(detail_id))
             for i in range(6 - len(details_data)):
                 details_data.append(details_data[-1])
-        details_data.append(detail_id)  # add id to each detail table for easy indexing
+
+        # add detailId to each detail table for easy indexing
+        details_data.append(detail_id)
         return details_data
 
     @staticmethod
@@ -356,7 +368,8 @@ class API(object):
         Parses data returned from details_grid_unavailability method
         """
         if len(tables_data) != 7:
-            raise EntsoeApiExcetpion(f"invalid  size for details : {tables_data}")
+            raise EntsoeApiExcetpion(f"invalid  size for details : "
+                                     f"{tables_data}")
         return {"comments": tables_data[0],
                 "reason": tables_data[1],
                 "code": tables_data[2],
@@ -366,7 +379,8 @@ class API(object):
                 "detailId": tables_data[6]
                 }
 
-    def curve_grid_unavailability(self, detail_id, offset=0, stop_offset=0, batch_size=None, batch_progress=None):
+    def curve_grid_unavailability(self, detail_id, offset=0, stop_offset=0,
+                                  batch_size=None, batch_progress=None):
         """
         Implements api method getDetailCurve
         """
@@ -395,8 +409,10 @@ class API(object):
             timeseries_data = timeseries_data + curve_frag
             data.update({"iDisplayStart": have})
 
-            msg = f"progress [{have} / {json_curve['iTotalRecords']}] {detail_id}"
-            msg = f"batch [{batch_progress}/{batch_size}] " + msg if batch_size else msg
+            msg = f"progress [{have} / {json_curve['iTotalRecords']}] " \
+                f"{detail_id}"
+            msg = f"batch [{batch_progress}/{batch_size}] " \
+                  + msg if batch_size else msg
             logging.info(msg)
 
             if have == json_curve['iTotalRecords']:
@@ -439,7 +455,8 @@ class API(object):
                 raise error from None
             else:
                 detail_data.append(detail)
-                print(f"[2/3] detail  progress {round(100 * ((progress + 1) / total), 2)}%", end="\r")
+                print(f"[2/3] detail  progress "
+                      f"{round(100 * ((progress + 1) / total), 2)}%", end="\r")
                 logging.info(f"progress [{progress + 1} / {total}] detail {i}")
                 time.sleep(0.5)
 
@@ -447,28 +464,34 @@ class API(object):
         print("\n \n")
 
     @staticmethod
-    def curve_grid_unavailability_batch(api, detail_id_list, days_to_fetch=5, skip_past_data=False):
+    def curve_grid_unavailability_batch(api, detail_id_list, days_to_fetch=None,
+                                        skip_past_data=False):
         if skip_past_data:
             if len(detail_id_list[0]) is not 3:
-                raise RuntimeError("skip_past_data needs")
+                raise RuntimeError("skip_past_data needs time interval")
         total = len(detail_id_list)
         have = 0
         timeseries_data = []
 
         logging.info("start downloading time series data\n")
         for progress, i in enumerate(detail_id_list):
-            print(f"[3/3] time series  progress {round(100 * ((progress + 1) / total), 2)}%", end="\r")
+            print(f"[3/3] time series  progress "
+                  f"{round(100 * ((progress + 1) / total), 2)}%", end="\r")
             try:
                 if skip_past_data:
                     offset = api.calculate_offset_from_now(i[1], i[2])
                     stop_offset = offset + 60 * days_to_fetch
-                    detail = api.curve_grid_unavailability(i[0], offset, stop_offset, batch_progress=progress + 1,
-                                                           batch_size=total)
+                    detail = api. \
+                        curve_grid_unavailability(i[0], offset, stop_offset,
+                                                  batch_progress=progress + 1,
+                                                  batch_size=total)
                 else:
                     offset = 0
                     stop_offset = 60 * days_to_fetch
-                    detail = api.curve_grid_unavailability(i[0], offset, stop_offset, batch_progress=progress + 1,
-                                                           batch_size=total)
+                    detail = api. \
+                        curve_grid_unavailability(i[0], offset, stop_offset,
+                                                  batch_progress=progress + 1,
+                                                  batch_size=total)
             except Exception as error:
                 logging.error(error)
                 raise error from None
@@ -487,7 +510,9 @@ class API(object):
 
         borders = {}
 
-        response = requests.get("https://transparency.entsoe.eu/outage-domain/r2/unavailabilityInTransmissionGrid/show")
+        response = requests.get("https://transparency.entsoe.eu/outage-domain/"
+                                "r2/unavailabilityInTransmissionGrid/show")
+
         soup = BeautifulSoup(response.text, 'lxml')
         divs = soup.find_all("div", class_="dv-sub-filter-hierarchic-wrapper")
 
@@ -506,11 +531,18 @@ class API(object):
     @staticmethod
     def calculate_offset_from_now(start_date, end_date):
         if type(start_date) is str and type(end_date) is str:
-            start_date = datetime.datetime.strptime(start_date, "%d.%m.%Y %H:%M")
-            end_date = datetime.datetime.strptime(end_date, "%d.%m.%Y %H:%M")
-        now_date = str(datetime.datetime.now()).replace("-", ".").split(" ")[0] + " 00:00"
+            start_date = datetime.datetime. \
+                strptime(start_date, "%d.%m.%Y %H:%M")
+            end_date = datetime.datetime. \
+                strptime(end_date, "%d.%m.%Y %H:%M")
+
+        now_date = str(
+            datetime.datetime.now()).replace("-", ".").split(" ")[0] + " 00:00"
         now_date = datetime.datetime.strptime(now_date, "%Y.%m.%d %H:%M")
-        number_of_datapoints = len(pd.date_range(start_date, end_date, freq='H'))
+
+        number_of_datapoints = len(pd.date_range(start_date, end_date,
+                                                 freq='H'))
         off_set_time = now_date - start_date
-        off_set = len(pd.date_range(start_date, start_date + off_set_time, freq='H'))
+        off_set = len(pd.date_range(start_date, start_date + off_set_time,
+                                    freq='H'))
         return off_set
