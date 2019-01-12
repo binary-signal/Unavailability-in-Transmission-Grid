@@ -501,6 +501,7 @@ class API(object):
                 have += 1
         print("\n \n")
         logging.info("time series download completed\n\n")
+        return timeseries_data
 
     @staticmethod
     def get_borders():
