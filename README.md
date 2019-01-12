@@ -32,7 +32,7 @@ open a terminal
 You can enable more detailed logging by forwarding logs to a log server 
 . You need to have two terminals open at the same time
 
- terminal 1: `pipenv run python main.py`
+ terminal 1: `pipenv run python main.py -v`
  
  terminal 2:`pipenv run python console.py`
  
