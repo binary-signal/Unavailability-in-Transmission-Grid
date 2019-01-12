@@ -141,6 +141,17 @@ class API(object):
         if outage_status is None:
             outage_status = self.outage_status
 
+        import pprint
+
+        msg = f"session config \n" \
+            f"time interval: {from_date} - {to_date}\n" \
+            f"asset type   : {pprint.pformat(asset_type, indent=4)}\n" \
+            f"outage type  : {pprint.pformat(outage_type, indent=4)}\n" \
+            f"outage status: {pprint.pformat(outage_status, indent=4)}\n" \
+            f"country: {country} area type: {area_type} \n" \
+            f"borders: \n{pprint.pformat(borders, indent=2, )}\n"
+
+        logging.info(msg)
         table_data = []
 
         params = (
@@ -166,6 +177,7 @@ class API(object):
                 "amDataProp": [0, 1, 2, 3, 4, 5, 6]}
 
         have = 0  # keep track of  data
+        logging.info("start downloading table data\n")
         while True:
             json_data = self.api_call("getDataTableData/", params, data)
 
@@ -182,11 +194,10 @@ class API(object):
                 progress = 0
 
             print(f"[1/3] Data progress {round(100 * progress, 2)}%", end="\r")
-            logging.info(f"fetched data | progress {have} / {json_data['iTotalRecords']}")
+            logging.info(f"progress [{have} / {json_data['iTotalRecords']}] data")
 
             if have == json_data['iTotalRecords']:
-                print("\ndata completed\n")
-                logging.info("data  download completed")
+                logging.info("data  download completed\n\n")
                 break
         return table_data
 
@@ -331,7 +342,7 @@ class API(object):
         # Fixme BUG with missing data row
         if len(details_data) != 6:
             # hack to fill in in missing values in Affected Assets when there are No Affected Assets
-            logging.warning("Row id {} has missing data, fill in missing values".format(detail_id))
+            # logging.warning("Row id {} has missing data, fill in missing values".format(detail_id))
             for i in range(6 - len(details_data)):
                 details_data.append(details_data[-1])
         details_data.append(detail_id)  # add id to each detail table for easy indexing
@@ -353,7 +364,7 @@ class API(object):
                 "detailId": tables_data[6]
                 }
 
-    def curve_grid_unavailability(self, detail_id, offset=0):
+    def curve_grid_unavailability(self, detail_id, offset=0, batch_size=None, batch_progress=None):
         """
         Implements api method getDetailCurve
         """
@@ -371,20 +382,23 @@ class API(object):
                 "iDisplayLength": self.items_per_page,
                 "amDataProp": [0, 1]}
 
-        import pprint
         while True:
             json_curve = self.api_call("getDetailCurve/", params, data)
             curve_frag = json_curve['aaData']
-            pprint.pprint(curve_frag, indent=2)
+            # pprint.pprint(curve_frag, indent=2)
 
             have += len(curve_frag)
 
             timeseries_data = timeseries_data + curve_frag
             data.update({"iDisplayStart": have})
-            logging.info(
-                f"progress [{have}/{json_curve['iTotalRecords']}] ts_id: {detail_id} ")
+
+            msg = f"progress [{have} / {json_curve['iTotalRecords']}] {detail_id}"
+            msg = f"Batch [{batch_progress}/{batch_size}] " + msg if batch_size else msg
+            logging.info(msg)
+
             if have == json_curve['iTotalRecords']:
                 break
+
         return timeseries_data
 
     @staticmethod
@@ -409,10 +423,10 @@ class API(object):
 
     @staticmethod
     def details_grid_unavailability_batch(api, detail_id_list):
+        logging.info("start downloading detail data\n")
         total = len(detail_id_list)
-        have = 0
         detail_data = []
-        for i in detail_id_list:
+        for progress, i in enumerate(detail_id_list):
             try:
                 detail = api.details_grid_unavailability(i)
             except Exception as error:
@@ -420,34 +434,30 @@ class API(object):
                 raise error from None
             else:
                 detail_data.append(detail)
-                have += 1
-                print(f"[2/3] Details table progress {round(100 * (have / total), 2)}%", end="\r")
-                logging.info(f"fetched details for {i} | progress {have} / {total}")
-                time.sleep(1)
+                print(f"[2/3] Details  progress {round(100 * (progress / total), 2)}%", end="\r")
+                logging.info(f"progress [{progress + 1} / {total}] detail {i}")
+                time.sleep(0.5)
 
-        print("\nDetails download completed\n")
-        logging.info("Details download completed")
+        logging.info("detail download completed\n\n")
 
     @staticmethod
     def curve_grid_unavailability_batch(api, detail_id_list):
         total = len(detail_id_list)
         have = 0
-        detail_data = []
+        timeseries_data = []
 
-        for i in detail_id_list:
-            print(f"[3/3] Timeseries progress {round(100 * (have / total), 2)}%", end="\r")
-            logging.info(f"Timeseries progress {i} | progress {have} / {total}")
+        logging.info("start downloading time series data\n")
+        for progress, i in enumerate(detail_id_list):
             try:
-                detail = api.curve_grid_unavailability(i)
+                detail = api.curve_grid_unavailability(i, batch_progress=progress + 1, batch_size=total)
             except Exception as error:
                 logging.error(error)
                 raise error from None
             else:
-                detail_data.append(detail)
+                timeseries_data.append(detail)
                 have += 1
 
-        print("\nTime series download completed\n")
-        logging.info("Time series download completed")
+        logging.info("time series download completed\n\n")
 
     @staticmethod
     def get_borders():
