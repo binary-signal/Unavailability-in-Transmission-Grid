@@ -143,8 +143,6 @@ class API(object):
 
         table_data = []
 
-        print(borders)
-
         params = (
             ('name', ''),
             ('defaultValue', 'false'),
@@ -159,9 +157,6 @@ class API(object):
             ('outageStatus.values',
              [self.outage_status[param] for param in outage_status if param in self.outage_status]),
         )
-        import pprint
-        msg = pprint.pformat(params, indent=2)
-        logging.info(msg)
 
         data = {"sEcho": 2,  # TODO why the fuck for is this key ?
                 "iColumns": 7,
@@ -174,16 +169,7 @@ class API(object):
         while True:
             json_data = self.api_call("getDataTableData/", params, data)
 
-            import pprint
-            pprint.pprint(
-                json_data, indent=2
-            )
-
             data_frag = self.parse_table_data(json_data)
-
-
-
-            print(json_data['iTotalRecords'])
 
             have += len(data_frag)
             data.update({'iDisplayStart': have})  # set pagination offset
@@ -257,8 +243,8 @@ class API(object):
             interval = d['unavailabilityInterval']
             start_date, end_date = API.parse_unavailability_interval(interval)
             d.pop('unavailabilityInterval', None)
-            d.update({"intervalStart": start_date,
-                      "intervalEnd": end_date})
+            d.update({"dateStart": start_date,
+                      "dateEnd": end_date})
 
         return pd.DataFrame(data)
 
@@ -367,12 +353,12 @@ class API(object):
                 "detailId": tables_data[6]
                 }
 
-    def curve_grid_unavailability(self, detail_id):
+    def curve_grid_unavailability(self, detail_id, offset=0):
         """
         Implements api method getDetailCurve
         """
         timeseries_data = []
-        have = page = 0
+        have = offset
 
         params = (
             ('detailId', detail_id),
@@ -381,21 +367,22 @@ class API(object):
         data = {"sEcho": 1,
                 "iColumns": 2,
                 "sColumns": "mtu,ntc",
-                "iDisplayStart": 0,
+                "iDisplayStart": offset,
                 "iDisplayLength": self.items_per_page,
                 "amDataProp": [0, 1]}
 
+        import pprint
         while True:
             json_curve = self.api_call("getDetailCurve/", params, data)
             curve_frag = json_curve['aaData']
+            pprint.pprint(curve_frag, indent=2)
 
             have += len(curve_frag)
-            page += 1
 
             timeseries_data = timeseries_data + curve_frag
             data.update({"iDisplayStart": have})
             logging.info(
-                f"fetched timeseries {detail_id}  page {page} | progress have {have} / {json_curve['iTotalRecords']}")
+                f"progress [{have}/{json_curve['iTotalRecords']}] ts_id: {detail_id} ")
             if have == json_curve['iTotalRecords']:
                 break
         return timeseries_data
@@ -438,8 +425,8 @@ class API(object):
                 logging.info(f"fetched details for {i} | progress {have} / {total}")
                 time.sleep(1)
 
-    print("\nDetails download completed\n")
-    logging.info("Details download completed")
+        print("\nDetails download completed\n")
+        logging.info("Details download completed")
 
     @staticmethod
     def curve_grid_unavailability_batch(api, detail_id_list):
@@ -479,10 +466,9 @@ class API(object):
             country_borders = []
             for i in inputs:
                 border = i.get("value")
-                if 'on' in border: # ignore this string in borders
+                if 'on' in border:  # ignore this string in borders
                     continue
                 country_borders.append(border)
-                print(border)
             borders.update({country: country_borders})
 
         return borders
