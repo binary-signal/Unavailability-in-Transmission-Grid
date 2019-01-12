@@ -497,7 +497,7 @@ class API(object):
                 raise error from None
             else:
 
-                timeseries_data.append(detail)
+                timeseries_data.append({i: detail})
                 have += 1
         print("\n \n")
         logging.info("time series download completed\n\n")
