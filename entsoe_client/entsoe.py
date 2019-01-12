@@ -193,10 +193,11 @@ class API(object):
             except ZeroDivisionError:
                 progress = 0
 
-            print(f"[1/3] Data progress {round(100 * progress, 2)}%", end="\r")
+            print(f"[1/3] data progress {round(100 * progress, 2)}%", end="\r")
             logging.info(f"progress [{have} / {json_data['iTotalRecords']}] data")
 
             if have == json_data['iTotalRecords']:
+                print("\n \n")
                 logging.info("data  download completed\n\n")
                 break
         return table_data
@@ -260,7 +261,7 @@ class API(object):
         return pd.DataFrame(data)
 
     @staticmethod
-    def parse_unavailability_interval(interval):
+    def parse_unavailability_interval(interval, tz_support=False):
         """
         Parses date interval in data_table_to_df function
         """
@@ -275,8 +276,9 @@ class API(object):
         start_date = datetime.datetime.strptime(start_date, "%d.%m.%Y %H:%M")
         end_date = datetime.datetime.strptime(end_date, "%d.%m.%Y %H:%M")
 
-        start_date = start_date.replace(tzinfo=pytz.timezone(tz))
-        end_date = end_date.replace(tzinfo=pytz.timezone(tz))
+        if tz_support:
+            start_date = start_date.replace(tzinfo=pytz.timezone(tz))
+            end_date = end_date.replace(tzinfo=pytz.timezone(tz))
 
         return start_date, end_date
 
@@ -364,10 +366,11 @@ class API(object):
                 "detailId": tables_data[6]
                 }
 
-    def curve_grid_unavailability(self, detail_id, offset=0, batch_size=None, batch_progress=None):
+    def curve_grid_unavailability(self, detail_id, offset=0, stop_offset=0, batch_size=None, batch_progress=None):
         """
         Implements api method getDetailCurve
         """
+
         timeseries_data = []
         have = offset
 
@@ -393,10 +396,12 @@ class API(object):
             data.update({"iDisplayStart": have})
 
             msg = f"progress [{have} / {json_curve['iTotalRecords']}] {detail_id}"
-            msg = f"Batch [{batch_progress}/{batch_size}] " + msg if batch_size else msg
+            msg = f"batch [{batch_progress}/{batch_size}] " + msg if batch_size else msg
             logging.info(msg)
 
             if have == json_curve['iTotalRecords']:
+                break
+            elif have >= stop_offset:
                 break
 
         return timeseries_data
@@ -434,29 +439,44 @@ class API(object):
                 raise error from None
             else:
                 detail_data.append(detail)
-                print(f"[2/3] Details  progress {round(100 * (progress / total), 2)}%", end="\r")
+                print(f"[2/3] detail  progress {round(100 * ((progress + 1) / total), 2)}%", end="\r")
                 logging.info(f"progress [{progress + 1} / {total}] detail {i}")
                 time.sleep(0.5)
 
         logging.info("detail download completed\n\n")
+        print("\n \n")
 
     @staticmethod
-    def curve_grid_unavailability_batch(api, detail_id_list):
+    def curve_grid_unavailability_batch(api, detail_id_list, days_to_fetch=5, skip_past_data=False):
+        if skip_past_data:
+            if len(detail_id_list[0]) is not 3:
+                raise RuntimeError("skip_past_data needs")
         total = len(detail_id_list)
         have = 0
         timeseries_data = []
 
         logging.info("start downloading time series data\n")
         for progress, i in enumerate(detail_id_list):
+            print(f"[3/3] time series  progress {round(100 * ((progress + 1) / total), 2)}%", end="\r")
             try:
-                detail = api.curve_grid_unavailability(i, batch_progress=progress + 1, batch_size=total)
+                if skip_past_data:
+                    offset = api.calculate_offset_from_now(i[1], i[2])
+                    stop_offset = offset + 60 * days_to_fetch
+                    detail = api.curve_grid_unavailability(i[0], offset, stop_offset, batch_progress=progress + 1,
+                                                           batch_size=total)
+                else:
+                    offset = 0
+                    stop_offset = 60 * days_to_fetch
+                    detail = api.curve_grid_unavailability(i[0], offset, stop_offset, batch_progress=progress + 1,
+                                                           batch_size=total)
             except Exception as error:
                 logging.error(error)
                 raise error from None
             else:
+
                 timeseries_data.append(detail)
                 have += 1
-
+        print("\n \n")
         logging.info("time series download completed\n\n")
 
     @staticmethod
@@ -482,3 +502,15 @@ class API(object):
             borders.update({country: country_borders})
 
         return borders
+
+    @staticmethod
+    def calculate_offset_from_now(start_date, end_date):
+        if type(start_date) is str and type(end_date) is str:
+            start_date = datetime.datetime.strptime(start_date, "%d.%m.%Y %H:%M")
+            end_date = datetime.datetime.strptime(end_date, "%d.%m.%Y %H:%M")
+        now_date = str(datetime.datetime.now()).replace("-", ".").split(" ")[0] + " 00:00"
+        now_date = datetime.datetime.strptime(now_date, "%Y.%m.%d %H:%M")
+        number_of_datapoints = len(pd.date_range(start_date, end_date, freq='H'))
+        off_set_time = now_date - start_date
+        off_set = len(pd.date_range(start_date, start_date + off_set_time, freq='H'))
+        return off_set
