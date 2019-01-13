@@ -176,7 +176,7 @@ class API(object):
                                      in self.outage_status]),
         )
 
-        data = {"sEcho": 2,  # TODO why the fuck for is this key ?
+        data = {"sEcho": 2,  # what is this ?
                 "iColumns": 7,
                 "sColumns": "status,nature,unavailabilityInterval,"
                             "inArea,outArea,newNTC,",
@@ -256,7 +256,8 @@ class API(object):
         return data
 
     @staticmethod
-    def data_table_to_df(data):
+    def data_to_df(data):
+        raise NotImplementedError("Work in progress")
         """
         Returns a pandas dataframe from  unavailability data in
         transmission grid
@@ -273,7 +274,7 @@ class API(object):
     @staticmethod
     def parse_unavailability_interval(interval, tz_support=False):
         """
-        Parses date interval in data_table_to_df function
+        Parses date interval in data_to_df function
         """
         date_string, tz = tuple(interval.rsplit(" ("))
         tz = tz.replace(")", "").strip()
@@ -297,7 +298,7 @@ class API(object):
         """
         Returns a pandas dataframe with details data indexed on detailId
         """
-        raise NotImplementedError
+        raise NotImplementedError("Work in progress")
 
     def details_grid_unavailability(self, detail_id):
         """
@@ -349,12 +350,15 @@ class API(object):
                 if row:
                     details_data += row
 
+        # hack remove duplicate failure status in details
         if details_data.count("Failure") == 2:
             details_data.remove("Failure")
-        # Fixme BUG with missing data row
+
         if len(details_data) != 6:
-            # hack to fill in in missing values in Affected Assets when there are No Affected Assets
-            # logging.warning("Row id {} has missing data, fill in missing values".format(detail_id))
+            # hack fill in missing values in Affected Assets when there are No
+            # Affected Assets
+            # logging.warning("Row id {} has missing data, fill in "
+            #                "missing values".format(detail_id))
             for i in range(6 - len(details_data)):
                 details_data.append(details_data[-1])
 
@@ -427,6 +431,9 @@ class API(object):
         """
         Returns a pandas dataframe from time series data indexed on date
         """
+
+        raise NotImplementedError("Work in progress")
+
         data = [[*row[0].split(" - "), row[1]] for row in data]
 
         start_date = data[0][0]
@@ -462,6 +469,7 @@ class API(object):
 
         logging.info("detail download completed\n\n")
         print("\n \n")
+        return detail_data
 
     @staticmethod
     def curve_grid_unavailability_batch(api, detail_id_list, days_to_fetch=None,
@@ -497,7 +505,7 @@ class API(object):
                 raise error from None
             else:
 
-                timeseries_data.append({i: detail})
+                timeseries_data.append({i[0]: detail})
                 have += 1
         print("\n \n")
         logging.info("time series download completed\n\n")
