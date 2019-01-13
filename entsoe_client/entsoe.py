@@ -70,7 +70,7 @@ class API(object):
                                      headers=cls.__post_headers)
             response.raise_for_status()
         except requests.ConnectionError as error:
-            logging.error(error)
+            logging.exception(error, exc_info=True)
             raise error from None
         except requests.HTTPError as error:
             try:
@@ -98,7 +98,7 @@ class API(object):
                                     headers=cls.__get_headers)
             response.raise_for_status()
         except (requests.HTTPError, requests.ConnectionError) as error:
-            logging.error(error)
+            logging.exception(error, exc_info=True)
             raise error from None
 
         else:
