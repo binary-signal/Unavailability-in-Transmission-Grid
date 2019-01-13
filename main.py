@@ -86,7 +86,10 @@ if __name__ == "__main__":
                         data points and ignores the rest time series data.
                             
         """
-        ids_interval = [[row['detailId'], *entsoe.parse_unavailability_interval(row['unavailabilityInterval'])]
+        ids_interval = [[row['detailId'],
+                         *entsoe.parse_unavailability_interval(
+                             row['unavailabilityInterval']
+                         )]
                         for row in data]
         timeseries = entsoe_client.API. \
             curve_grid_unavailability_batch(entsoe, ids_interval,
