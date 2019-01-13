@@ -1,4 +1,3 @@
-
 class EntsoeApiExcetpion(Exception):
     pass
 
