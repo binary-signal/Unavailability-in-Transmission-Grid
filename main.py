@@ -70,7 +70,7 @@ if __name__ == "__main__":
         """
         Time series data 
         
-        Fetching time series data can be very time consuming, due to big amount
+        Fetching time series data is time consuming, due to big amount
         of data and number of api calls resulting in rate limiting or remote
         host disconnections. In order to improve speed and avoid getting black  
         listed from the server use 'days_to_fetch' or 'skip_past_data' params
@@ -86,7 +86,7 @@ if __name__ == "__main__":
                         data points and ignores the rest time series data.
                             
         """
-        ids_interval = [[row['detailId'], row['dateStart'], row['dateEnd']]
+        ids_interval = [[row['detailId'], *entsoe.parse_unavailability_interval(row['unavailabilityInterval'])]
                         for row in data]
         timeseries = entsoe_client.API. \
             curve_grid_unavailability_batch(entsoe, ids_interval,
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         pickle.dump(timeseries, open("data_series.pckl", "wb"))
 
         logging.info("session completed successfully")
-        print("\n\nDone")
+        print("Done")
     except KeyboardInterrupt:
         logging.info("Session terminated")
         sys.exit(0)

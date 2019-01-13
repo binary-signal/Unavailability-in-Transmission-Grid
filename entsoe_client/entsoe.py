@@ -291,7 +291,7 @@ class API(object):
             start_date = start_date.replace(tzinfo=pytz.timezone(tz))
             end_date = end_date.replace(tzinfo=pytz.timezone(tz))
 
-        return start_date, end_date
+        return [start_date, end_date]
 
     @staticmethod
     def details_to_df(data):
