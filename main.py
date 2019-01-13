@@ -19,7 +19,8 @@ if __name__ == "__main__":
         rootLogger.setLevel(logging.INFO)
 
         socketHandler = logging.handlers. \
-            SocketHandler('localhost', logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+            SocketHandler('localhost',
+                          logging.handlers.DEFAULT_TCP_LOGGING_PORT)
         rootLogger.addHandler(socketHandler)
 
     logging.getLogger(__name__)
