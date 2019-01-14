@@ -29,10 +29,43 @@ open a terminal
 `pipenv run python main.py`
 
 #### Verbose logging 
-You can enable more detailed logging by forwarding logs to a log server 
-. You need to have two terminals open at the same time
+Produce more detailed log messages and save them to a file by setting -v flag.
+Every time the file main.py is executed, log file is overwritten.
 
- terminal 1: `pipenv run python main.py -v`
+`pipenv run python main.py -v`
+
+#### Config file
+The script needs a config file formatted as JSON. A missing or corrupted config
+file will produce a runtime error.
+
+A simple config.json
+``` {
+  "session": {
+    "from_date": "14.01.2019",
+    "to_date": "16.01.2019",
+    "country": "FR",
+    "asset_type": [
+      "AC Link",
+      "DC Link",
+      "Substation",
+      "Transformer",
+      "Not specified"
+    ],
+    "outage_status": [
+      "Active"
+    ],
+    "outage_type": [
+      "Forced",
+      "Planned"
+    ],
+    "area_type": "BORDER_BZN"
+  },
+  "advanced": {
+    "log_file": "logs.log",
+    "time_delay": 1,
+    "data_dir": "data"
+  }
+}
+``` 
  
- terminal 2:`pipenv run python console.py`
  
