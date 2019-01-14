@@ -2,8 +2,16 @@ import argparse
 import logging.handlers
 import pickle
 import sys
+from timeit import default_timer as timer
 
 import entsoe_client
+
+
+def human_time(start, end, msg=""):
+    hours, rem = divmod(end - start, 3600)
+    minutes, seconds = divmod(rem, 60)
+    print("{}elapsed time {:0>2}:{:0>2}:{:05.2f}".format(msg, int(hours), int(minutes), seconds))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -27,6 +35,7 @@ if __name__ == "__main__":
 
     logging.info("\n" * 5 + "\t" * 3 + "--" * 10 + "  Session " + "--" * 10)
 
+    t_total_start = timer()
     entsoe = entsoe_client.API(items_per_page=100)
 
     """
@@ -45,7 +54,7 @@ if __name__ == "__main__":
     outage_status = ["Active"]
     outage_type = ["Forced", "Planned"]
 
-    #area_type = "BORDER_CTA"  # use this for Border - Control Area
+    # area_type = "BORDER_CTA"  # use this for Border - Control Area
     area_type = "BORDER_BZN"  # use this for Border - Bidding Zone
 
     try:
@@ -90,6 +99,8 @@ if __name__ == "__main__":
                              row['unavailabilityInterval']
                          )]
                         for row in data]
+        t_start = timer()
+
         timeseries = entsoe_client.API. \
             curve_grid_unavailability_batch(entsoe, ids_interval,
                                             days_to_fetch=2,
@@ -98,7 +109,10 @@ if __name__ == "__main__":
         pickle.dump(timeseries, open("data_series.pckl", "wb"))
 
         logging.info("session completed successfully")
+        human_time(t_start, timer(), "time series data ")
+        human_time(t_total_start, timer(), "total ")
         print("Done")
+
     except KeyboardInterrupt:
         logging.info("Session terminated")
         sys.exit(0)
