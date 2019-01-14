@@ -1,22 +1,27 @@
 {
-  "from_date": "14.01.2019",
-  "to_date": "16.01.2019",
-  "country": "FR",
-  "asset_type": [
-    "AC Link",
-    "DC Link",
-    "Substation",
-    "Transformer",
-    "Not specified"
-  ],
-  "outage_status": [
-    "Active"
-  ],
-  "outage_type": [
-    "Forced",
-    "Planned"
-  ],
-  "area_type": "BORDER_BZN",
-  "days_to_fetch": 7,
-  "skip_past_data": "True"
+  "session": {
+    "from_date": "14.01.2019",
+    "to_date": "16.01.2019",
+    "country": "FR",
+    "asset_type": [
+      "AC Link",
+      "DC Link",
+      "Substation",
+      "Transformer",
+      "Not specified"
+    ],
+    "outage_status": [
+      "Active"
+    ],
+    "outage_type": [
+      "Forced",
+      "Planned"
+    ],
+    "area_type": "BORDER_BZN"
+  },
+  "advanced": {
+    "log_file": "logs.log",
+    "time_delay": 1,
+    "data_dir": "data"
+  }
 }
