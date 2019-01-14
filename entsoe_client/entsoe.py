@@ -57,7 +57,184 @@ class API(object):
         if items_per_page not in self.__pagination:
             raise ValueError("item_per_page domain is (10, 25, 50, 100)")
         self.items_per_page = items_per_page
-        self.__cta_borders = self.get_cta_borders()
+        self.__cta_borders = {'AL': ['CTY|10YAL-KESH-----5!CTA_CTA|10YAL-KESH-----5_CTA_CTA|10YGR-HTSO-----Y',
+                                     'CTY|10YAL-KESH-----5!CTA_CTA|10YAL-KESH-----5_CTA_CTA|10YCS-CG-TSO---S',
+                                     'CTY|10YAL-KESH-----5!CTA_CTA|10YAL-KESH-----5_CTA_CTA|10YCS-SERBIATSOV'],
+                              'AT': ['CTY|10YAT-APG------L!CTA_CTA|10YAT-APG------L_CTA_CTA|10YCH-SWISSGRIDZ',
+                                     'CTY|10YAT-APG------L!CTA_CTA|10YAT-APG------L_CTA_CTA|10YCZ-CEPS-----N',
+                                     'CTY|10YAT-APG------L!CTA_CTA|10YAT-APG------L_CTA_CTA|10YDE-RWENET---I',
+                                     'CTY|10YAT-APG------L!CTA_CTA|10YAT-APG------L_CTA_CTA|10YDE-EON------1',
+                                     'CTY|10YAT-APG------L!CTA_CTA|10YAT-APG------L_CTA_CTA|10YDE-ENBW-----N',
+                                     'CTY|10YAT-APG------L!CTA_CTA|10YAT-APG------L_CTA_CTA|10YHU-MAVIR----U',
+                                     'CTY|10YAT-APG------L!CTA_CTA|10YAT-APG------L_CTA_CTA|10YIT-GRTN-----B',
+                                     'CTY|10YAT-APG------L!CTA_CTA|10YAT-APG------L_CTA_CTA|10YSI-ELES-----O'],
+                              'BA': ['CTY|10YBA-JPCC-----D!CTA_CTA|10YBA-JPCC-----D_CTA_CTA|10YHR-HEP------M',
+                                     'CTY|10YBA-JPCC-----D!CTA_CTA|10YBA-JPCC-----D_CTA_CTA|10YCS-CG-TSO---S',
+                                     'CTY|10YBA-JPCC-----D!CTA_CTA|10YBA-JPCC-----D_CTA_CTA|10YCS-SERBIATSOV'],
+                              'BE': ['CTY|10YBE----------2!CTA_CTA|10YBE----------2_CTA_CTA|10YFR-RTE------C',
+                                     'CTY|10YBE----------2!CTA_CTA|10YBE----------2_CTA_CTA|10YGB----------A',
+                                     'CTY|10YBE----------2!CTA_CTA|10YBE----------2_CTA_CTA|10YLU-CEGEDEL-NQ',
+                                     'CTY|10YBE----------2!CTA_CTA|10YBE----------2_CTA_CTA|10YNL----------L'],
+                              'BG': ['CTY|10YCA-BULGARIA-R!CTA_CTA|10YCA-BULGARIA-R_CTA_CTA|10YGR-HTSO-----Y',
+                                     'CTY|10YCA-BULGARIA-R!CTA_CTA|10YCA-BULGARIA-R_CTA_CTA|10YMK-MEPSO----8',
+                                     'CTY|10YCA-BULGARIA-R!CTA_CTA|10YCA-BULGARIA-R_CTA_CTA|10YRO-TEL------P',
+                                     'CTY|10YCA-BULGARIA-R!CTA_CTA|10YCA-BULGARIA-R_CTA_CTA|10YCS-SERBIATSOV',
+                                     'CTY|10YCA-BULGARIA-R!CTA_CTA|10YCA-BULGARIA-R_CTA_CTA|10YTR-TEIAS----W'],
+                              'BY': ['CTY|BY!CTA_CTA|10Y1001A1001A51S_CTA_CTA|10YLT-1001A0008Q',
+                                     'CTY|BY!CTA_CTA|10Y1001A1001A51S_CTA_CTA|10Y1001C--000182'],
+                              'CH': ['CTY|10YCH-SWISSGRIDZ!CTA_CTA|10YCH-SWISSGRIDZ_CTA_CTA|10YAT-APG------L',
+                                     'CTY|10YCH-SWISSGRIDZ!CTA_CTA|10YCH-SWISSGRIDZ_CTA_CTA|10YDE-RWENET---I',
+                                     'CTY|10YCH-SWISSGRIDZ!CTA_CTA|10YCH-SWISSGRIDZ_CTA_CTA|10YDE-ENBW-----N',
+                                     'CTY|10YCH-SWISSGRIDZ!CTA_CTA|10YCH-SWISSGRIDZ_CTA_CTA|10YFR-RTE------C',
+                                     'CTY|10YCH-SWISSGRIDZ!CTA_CTA|10YCH-SWISSGRIDZ_CTA_CTA|10YIT-GRTN-----B'],
+                              'CZ': ['CTY|10YCZ-CEPS-----N!CTA_CTA|10YCZ-CEPS-----N_CTA_CTA|10YAT-APG------L',
+                                     'CTY|10YCZ-CEPS-----N!CTA_CTA|10YCZ-CEPS-----N_CTA_CTA|10YDE-VE-------2',
+                                     'CTY|10YCZ-CEPS-----N!CTA_CTA|10YCZ-CEPS-----N_CTA_CTA|10YDE-EON------1',
+                                     'CTY|10YCZ-CEPS-----N!CTA_CTA|10YCZ-CEPS-----N_CTA_CTA|10YPL-AREA-----S',
+                                     'CTY|10YCZ-CEPS-----N!CTA_CTA|10YCZ-CEPS-----N_CTA_CTA|10YSK-SEPS-----K',
+                                     'CTY|10YCZ-CEPS-----N!CTA_CTA|10YDOM-1001A082L_CTA_CTA|10YDE-VE-------2'],
+                              'DE': ['CTY|10Y1001A1001A83F!CTA_CTA|10YDE-VE-------2_CTA_CTA|10YCZ-CEPS-----N',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-VE-------2_CTA_CTA|10Y1001A1001A796',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-VE-------2_CTA_CTA|10YPL-AREA-----S',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-VE-------2_CTA_CTA|10YDOM-1001A082L',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-RWENET---I_CTA_CTA|10YAT-APG------L',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-RWENET---I_CTA_CTA|10YCH-SWISSGRIDZ',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-RWENET---I_CTA_CTA|10YFR-RTE------C',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-RWENET---I_CTA_CTA|10YLU-CEGEDEL-NQ',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-RWENET---I_CTA_CTA|10YNL----------L',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-EON------1_CTA_CTA|10YAT-APG------L',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-EON------1_CTA_CTA|10YCZ-CEPS-----N',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-EON------1_CTA_CTA|10Y1001A1001A796',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-EON------1_CTA_CTA|10YNL----------L',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-EON------1_CTA_CTA|10YSE-1--------K',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-ENBW-----N_CTA_CTA|10YAT-APG------L',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-ENBW-----N_CTA_CTA|10YCH-SWISSGRIDZ',
+                                     'CTY|10Y1001A1001A83F!CTA_CTA|10YDE-ENBW-----N_CTA_CTA|10YFR-RTE------C'],
+                              'DK': ['CTY|10Y1001A1001A65H!CTA_CTA|10Y1001A1001A796_CTA_CTA|10YDE-VE-------2',
+                                     'CTY|10Y1001A1001A65H!CTA_CTA|10Y1001A1001A796_CTA_CTA|10YDE-EON------1',
+                                     'CTY|10Y1001A1001A65H!CTA_CTA|10Y1001A1001A796_CTA_CTA|10YNO-0--------C',
+                                     'CTY|10Y1001A1001A65H!CTA_CTA|10Y1001A1001A796_CTA_CTA|10YSE-1--------K'],
+                              'EE': ['CTY|10Y1001A1001A39I!CTA_CTA|10Y1001A1001A39I_CTA_CTA|10YFI-1--------U',
+                                     'CTY|10Y1001A1001A39I!CTA_CTA|10Y1001A1001A39I_CTA_CTA|10YLV-1001A00074',
+                                     'CTY|10Y1001A1001A39I!CTA_CTA|10Y1001A1001A39I_CTA_CTA|10Y1001A1001A49F'],
+                              'ES': ['CTY|10YES-REE------0!CTA_CTA|10YES-REE------0_CTA_CTA|10YFR-RTE------C',
+                                     'CTY|10YES-REE------0!CTA_CTA|10YES-REE------0_CTA_CTA|10YPT-REN------W'],
+                              'FI': ['CTY|10YFI-1--------U!CTA_CTA|10YFI-1--------U_CTA_CTA|10Y1001A1001A39I',
+                                     'CTY|10YFI-1--------U!CTA_CTA|10YFI-1--------U_CTA_CTA|10YNO-0--------C',
+                                     'CTY|10YFI-1--------U!CTA_CTA|10YFI-1--------U_CTA_CTA|10Y1001A1001A49F',
+                                     'CTY|10YFI-1--------U!CTA_CTA|10YFI-1--------U_CTA_CTA|10YSE-1--------K'],
+                              'FR': ['CTY|10YFR-RTE------C!CTA_CTA|10YFR-RTE------C_CTA_CTA|10YBE----------2',
+                                     'CTY|10YFR-RTE------C!CTA_CTA|10YFR-RTE------C_CTA_CTA|10YCH-SWISSGRIDZ',
+                                     'CTY|10YFR-RTE------C!CTA_CTA|10YFR-RTE------C_CTA_CTA|10YDE-RWENET---I',
+                                     'CTY|10YFR-RTE------C!CTA_CTA|10YFR-RTE------C_CTA_CTA|10YDE-ENBW-----N',
+                                     'CTY|10YFR-RTE------C!CTA_CTA|10YFR-RTE------C_CTA_CTA|10YES-REE------0',
+                                     'CTY|10YFR-RTE------C!CTA_CTA|10YFR-RTE------C_CTA_CTA|10YIT-GRTN-----B',
+                                     'CTY|10YFR-RTE------C!CTA_CTA|10YFR-RTE------C_CTA_CTA|10YGB----------A'],
+                              'GR': ['CTY|10YGR-HTSO-----Y!CTA_CTA|10YGR-HTSO-----Y_CTA_CTA|10YAL-KESH-----5',
+                                     'CTY|10YGR-HTSO-----Y!CTA_CTA|10YGR-HTSO-----Y_CTA_CTA|10YCA-BULGARIA-R',
+                                     'CTY|10YGR-HTSO-----Y!CTA_CTA|10YGR-HTSO-----Y_CTA_CTA|10YIT-GRTN-----B',
+                                     'CTY|10YGR-HTSO-----Y!CTA_CTA|10YGR-HTSO-----Y_CTA_CTA|10YMK-MEPSO----8',
+                                     'CTY|10YGR-HTSO-----Y!CTA_CTA|10YGR-HTSO-----Y_CTA_CTA|10YTR-TEIAS----W'],
+                              'HR': ['CTY|10YHR-HEP------M!CTA_CTA|10YHR-HEP------M_CTA_CTA|10YBA-JPCC-----D',
+                                     'CTY|10YHR-HEP------M!CTA_CTA|10YHR-HEP------M_CTA_CTA|10YHU-MAVIR----U',
+                                     'CTY|10YHR-HEP------M!CTA_CTA|10YHR-HEP------M_CTA_CTA|10YCS-SERBIATSOV',
+                                     'CTY|10YHR-HEP------M!CTA_CTA|10YHR-HEP------M_CTA_CTA|10YSI-ELES-----O'],
+                              'HU': ['CTY|10YHU-MAVIR----U!CTA_CTA|10YHU-MAVIR----U_CTA_CTA|10YAT-APG------L',
+                                     'CTY|10YHU-MAVIR----U!CTA_CTA|10YHU-MAVIR----U_CTA_CTA|10YHR-HEP------M',
+                                     'CTY|10YHU-MAVIR----U!CTA_CTA|10YHU-MAVIR----U_CTA_CTA|10YRO-TEL------P',
+                                     'CTY|10YHU-MAVIR----U!CTA_CTA|10YHU-MAVIR----U_CTA_CTA|10YCS-SERBIATSOV',
+                                     'CTY|10YHU-MAVIR----U!CTA_CTA|10YHU-MAVIR----U_CTA_CTA|10YSK-SEPS-----K',
+                                     'CTY|10YHU-MAVIR----U!CTA_CTA|10YHU-MAVIR----U_CTA_CTA|10YUA-WEPS-----0'],
+                              'IE': ['CTY|10YIE-1001A00010!CTA_CTA|10YIE-1001A00010_CTA_CTA|10Y1001A1001A016',
+                                     'CTY|10YIE-1001A00010!CTA_CTA|10YIE-1001A00010_CTA_CTA|10YGB----------A'],
+                              'IT': ['CTY|10YIT-GRTN-----B!CTA_CTA|10YIT-GRTN-----B_CTA_CTA|10YAT-APG------L',
+                                     'CTY|10YIT-GRTN-----B!CTA_CTA|10YIT-GRTN-----B_CTA_CTA|10YCH-SWISSGRIDZ',
+                                     'CTY|10YIT-GRTN-----B!CTA_CTA|10YIT-GRTN-----B_CTA_CTA|10YFR-RTE------C',
+                                     'CTY|10YIT-GRTN-----B!CTA_CTA|10YIT-GRTN-----B_CTA_CTA|10YGR-HTSO-----Y',
+                                     'CTY|10YIT-GRTN-----B!CTA_CTA|10YIT-GRTN-----B_CTA_CTA|10Y1001A1001A93C',
+                                     'CTY|10YIT-GRTN-----B!CTA_CTA|10YIT-GRTN-----B_CTA_CTA|10YSI-ELES-----O'],
+                              'LT': ['CTY|10YLT-1001A0008Q!CTA_CTA|10YLT-1001A0008Q_CTA_CTA|10Y1001A1001A51S',
+                                     'CTY|10YLT-1001A0008Q!CTA_CTA|10YLT-1001A0008Q_CTA_CTA|10YLV-1001A00074',
+                                     'CTY|10YLT-1001A0008Q!CTA_CTA|10YLT-1001A0008Q_CTA_CTA|10YPL-AREA-----S',
+                                     'CTY|10YLT-1001A0008Q!CTA_CTA|10YLT-1001A0008Q_CTA_CTA|10Y1001A1001A50U',
+                                     'CTY|10YLT-1001A0008Q!CTA_CTA|10YLT-1001A0008Q_CTA_CTA|10YSE-1--------K'],
+                              'LU': ['CTY|10YLU-CEGEDEL-NQ!CTA_CTA|10YLU-CEGEDEL-NQ_CTA_CTA|10YBE----------2',
+                                     'CTY|10YLU-CEGEDEL-NQ!CTA_CTA|10YLU-CEGEDEL-NQ_CTA_CTA|10YDE-RWENET---I'],
+                              'LV': ['CTY|10YLV-1001A00074!CTA_CTA|10YLV-1001A00074_CTA_CTA|10Y1001A1001A39I',
+                                     'CTY|10YLV-1001A00074!CTA_CTA|10YLV-1001A00074_CTA_CTA|10YLT-1001A0008Q',
+                                     'CTY|10YLV-1001A00074!CTA_CTA|10YLV-1001A00074_CTA_CTA|10Y1001A1001A49F'],
+                              'MD': ['CTY|10Y1001A1001A990!CTA_CTA|10Y1001A1001A990_CTA_CTA|10YRO-TEL------P',
+                                     'CTY|10Y1001A1001A990!CTA_CTA|10Y1001A1001A990_CTA_CTA|10Y1001C--000182'],
+                              'ME': ['CTY|10YCS-CG-TSO---S!CTA_CTA|10YCS-CG-TSO---S_CTA_CTA|10YAL-KESH-----5',
+                                     'CTY|10YCS-CG-TSO---S!CTA_CTA|10YCS-CG-TSO---S_CTA_CTA|10YBA-JPCC-----D',
+                                     'CTY|10YCS-CG-TSO---S!CTA_CTA|10YCS-CG-TSO---S_CTA_CTA|10YCS-SERBIATSOV'],
+                              'MK': ['CTY|10YMK-MEPSO----8!CTA_CTA|10YMK-MEPSO----8_CTA_CTA|10YCA-BULGARIA-R',
+                                     'CTY|10YMK-MEPSO----8!CTA_CTA|10YMK-MEPSO----8_CTA_CTA|10YGR-HTSO-----Y',
+                                     'CTY|10YMK-MEPSO----8!CTA_CTA|10YMK-MEPSO----8_CTA_CTA|10YCS-SERBIATSOV'],
+                              'MT': ['CTY|10Y1001A1001A93C!CTA_CTA|10Y1001A1001A93C_CTA_CTA|10YIT-GRTN-----B'],
+                              'NL': ['CTY|10YNL----------L!CTA_CTA|10YNL----------L_CTA_CTA|10YBE----------2',
+                                     'CTY|10YNL----------L!CTA_CTA|10YNL----------L_CTA_CTA|10YDE-RWENET---I',
+                                     'CTY|10YNL----------L!CTA_CTA|10YNL----------L_CTA_CTA|10YDE-EON------1',
+                                     'CTY|10YNL----------L!CTA_CTA|10YNL----------L_CTA_CTA|10YNO-0--------C',
+                                     'CTY|10YNL----------L!CTA_CTA|10YNL----------L_CTA_CTA|10YGB----------A'],
+                              'NO': ['CTY|10YNO-0--------C!CTA_CTA|10YNO-0--------C_CTA_CTA|10Y1001A1001A796',
+                                     'CTY|10YNO-0--------C!CTA_CTA|10YNO-0--------C_CTA_CTA|10YFI-1--------U',
+                                     'CTY|10YNO-0--------C!CTA_CTA|10YNO-0--------C_CTA_CTA|10YNL----------L',
+                                     'CTY|10YNO-0--------C!CTA_CTA|10YNO-0--------C_CTA_CTA|10YSE-1--------K'],
+                              'PL': ['CTY|10YPL-AREA-----S!CTA_CTA|10YPL-AREA-----S_CTA_CTA|10YCZ-CEPS-----N',
+                                     'CTY|10YPL-AREA-----S!CTA_CTA|10YPL-AREA-----S_CTA_CTA|10YDE-VE-------2',
+                                     'CTY|10YPL-AREA-----S!CTA_CTA|10YPL-AREA-----S_CTA_CTA|10YLT-1001A0008Q',
+                                     'CTY|10YPL-AREA-----S!CTA_CTA|10YPL-AREA-----S_CTA_CTA|10YSE-1--------K',
+                                     'CTY|10YPL-AREA-----S!CTA_CTA|10YPL-AREA-----S_CTA_CTA|10YSK-SEPS-----K',
+                                     'CTY|10YPL-AREA-----S!CTA_CTA|10YPL-AREA-----S_CTA_CTA|10Y1001A1001A869'],
+                              'PT': ['CTY|10YPT-REN------W!CTA_CTA|10YPT-REN------W_CTA_CTA|10YES-REE------0'],
+                              'RO': ['CTY|10YRO-TEL------P!CTA_CTA|10YRO-TEL------P_CTA_CTA|10YCA-BULGARIA-R',
+                                     'CTY|10YRO-TEL------P!CTA_CTA|10YRO-TEL------P_CTA_CTA|10YHU-MAVIR----U',
+                                     'CTY|10YRO-TEL------P!CTA_CTA|10YRO-TEL------P_CTA_CTA|10Y1001A1001A990',
+                                     'CTY|10YRO-TEL------P!CTA_CTA|10YRO-TEL------P_CTA_CTA|10YCS-SERBIATSOV',
+                                     'CTY|10YRO-TEL------P!CTA_CTA|10YRO-TEL------P_CTA_CTA|10YUA-WEPS-----0'],
+                              'RS': ['CTY|10YCS-SERBIATSOV!CTA_CTA|10YCS-SERBIATSOV_CTA_CTA|10YAL-KESH-----5',
+                                     'CTY|10YCS-SERBIATSOV!CTA_CTA|10YCS-SERBIATSOV_CTA_CTA|10YBA-JPCC-----D',
+                                     'CTY|10YCS-SERBIATSOV!CTA_CTA|10YCS-SERBIATSOV_CTA_CTA|10YCA-BULGARIA-R',
+                                     'CTY|10YCS-SERBIATSOV!CTA_CTA|10YCS-SERBIATSOV_CTA_CTA|10YHR-HEP------M',
+                                     'CTY|10YCS-SERBIATSOV!CTA_CTA|10YCS-SERBIATSOV_CTA_CTA|10YHU-MAVIR----U',
+                                     'CTY|10YCS-SERBIATSOV!CTA_CTA|10YCS-SERBIATSOV_CTA_CTA|10YCS-CG-TSO---S',
+                                     'CTY|10YCS-SERBIATSOV!CTA_CTA|10YCS-SERBIATSOV_CTA_CTA|10YMK-MEPSO----8',
+                                     'CTY|10YCS-SERBIATSOV!CTA_CTA|10YCS-SERBIATSOV_CTA_CTA|10YRO-TEL------P'],
+                              'RU': ['CTY|RU!CTA_CTA|10Y1001A1001A49F_CTA_CTA|10Y1001A1001A39I',
+                                     'CTY|RU!CTA_CTA|10Y1001A1001A49F_CTA_CTA|10YFI-1--------U',
+                                     'CTY|RU!CTA_CTA|10Y1001A1001A49F_CTA_CTA|10YLV-1001A00074',
+                                     'CTY|RU!CTA_CTA|10Y1001A1001A49F_CTA_CTA|10Y1001C--000182',
+                                     'CTY|RU!CTA_CTA|10Y1001A1001A50U_CTA_CTA|10YLT-1001A0008Q'],
+                              'SE': ['CTY|10YSE-1--------K!CTA_CTA|10YSE-1--------K_CTA_CTA|10YDE-EON------1',
+                                     'CTY|10YSE-1--------K!CTA_CTA|10YSE-1--------K_CTA_CTA|10Y1001A1001A796',
+                                     'CTY|10YSE-1--------K!CTA_CTA|10YSE-1--------K_CTA_CTA|10YFI-1--------U',
+                                     'CTY|10YSE-1--------K!CTA_CTA|10YSE-1--------K_CTA_CTA|10YLT-1001A0008Q',
+                                     'CTY|10YSE-1--------K!CTA_CTA|10YSE-1--------K_CTA_CTA|10YNO-0--------C',
+                                     'CTY|10YSE-1--------K!CTA_CTA|10YSE-1--------K_CTA_CTA|10YPL-AREA-----S'],
+                              'SI': ['CTY|10YSI-ELES-----O!CTA_CTA|10YSI-ELES-----O_CTA_CTA|10YAT-APG------L',
+                                     'CTY|10YSI-ELES-----O!CTA_CTA|10YSI-ELES-----O_CTA_CTA|10YHR-HEP------M',
+                                     'CTY|10YSI-ELES-----O!CTA_CTA|10YSI-ELES-----O_CTA_CTA|10YIT-GRTN-----B'],
+                              'SK': ['CTY|10YSK-SEPS-----K!CTA_CTA|10YSK-SEPS-----K_CTA_CTA|10YCZ-CEPS-----N',
+                                     'CTY|10YSK-SEPS-----K!CTA_CTA|10YSK-SEPS-----K_CTA_CTA|10YHU-MAVIR----U',
+                                     'CTY|10YSK-SEPS-----K!CTA_CTA|10YSK-SEPS-----K_CTA_CTA|10YPL-AREA-----S',
+                                     'CTY|10YSK-SEPS-----K!CTA_CTA|10YSK-SEPS-----K_CTA_CTA|10YUA-WEPS-----0'],
+                              'TR': ['CTY|10YTR-TEIAS----W!CTA_CTA|10YTR-TEIAS----W_CTA_CTA|10YCA-BULGARIA-R',
+                                     'CTY|10YTR-TEIAS----W!CTA_CTA|10YTR-TEIAS----W_CTA_CTA|10YGR-HTSO-----Y'],
+                              'UA': ['CTY|10Y1001C--00003F!CTA_CTA|10YUA-WEPS-----0_CTA_CTA|10YHU-MAVIR----U',
+                                     'CTY|10Y1001C--00003F!CTA_CTA|10YUA-WEPS-----0_CTA_CTA|10YRO-TEL------P',
+                                     'CTY|10Y1001C--00003F!CTA_CTA|10YUA-WEPS-----0_CTA_CTA|10YSK-SEPS-----K',
+                                     'CTY|10Y1001C--00003F!CTA_CTA|10Y1001A1001A869_CTA_CTA|10YPL-AREA-----S',
+                                     'CTY|10Y1001C--00003F!CTA_CTA|10Y1001C--000182_CTA_CTA|10Y1001A1001A51S',
+                                     'CTY|10Y1001C--00003F!CTA_CTA|10Y1001C--000182_CTA_CTA|10Y1001A1001A990',
+                                     'CTY|10Y1001C--00003F!CTA_CTA|10Y1001C--000182_CTA_CTA|10Y1001A1001A49F'],
+                              'UK': ['CTY|GB!CTA_CTA|10YGB----------A_CTA_CTA|10YBE----------2',
+                                     'CTY|GB!CTA_CTA|10Y1001A1001A016_CTA_CTA|10YIE-1001A00010',
+                                     'CTY|GB!CTA_CTA|10Y1001A1001A016_CTA_CTA|10YGB----------A',
+                                     'CTY|GB!CTA_CTA|10YGB----------A_CTA_CTA|10YFR-RTE------C',
+                                     'CTY|GB!CTA_CTA|10YGB----------A_CTA_CTA|10YIE-1001A00010',
+                                     'CTY|GB!CTA_CTA|10YGB----------A_CTA_CTA|10YNL----------L']}
+
         self.__bzn_borders = {'AL': ['CTY|10YAL-KESH-----5!BZN_BZN|10YAL-KESH-----5_BZN_BZN|10YGR-HTSO-----Y',
                                      'CTY|10YAL-KESH-----5!BZN_BZN|10YAL-KESH-----5_BZN_BZN|10YCS-CG-TSO---S',
                                      'CTY|10YAL-KESH-----5!BZN_BZN|10YAL-KESH-----5_BZN_BZN|10YCS-SERBIATSOV'],
@@ -791,35 +968,9 @@ class API(object):
         return timeseries_data
 
     @staticmethod
-    def get_cta_borders():
+    def parse_borders_from_html_code():
         """
         returns  country -  borders dictionary
-        """
-
-        borders = {}
-
-        response = requests.get("https://transparency.entsoe.eu/outage-domain/"
-                                "r2/unavailabilityInTransmissionGrid/show")
-
-        soup = BeautifulSoup(response.text, 'lxml')
-        divs = soup.find_all("div", class_="dv-sub-filter-hierarchic-wrapper")
-
-        for country, div in zip(API.countries, divs):
-            inputs = div.find_all("input")
-            country_borders = []
-            for i in inputs:
-                border = i.get("value")
-                if 'on' in border:  # ignore this string in borders
-                    continue
-                country_borders.append(border)
-            borders.update({country: country_borders})
-
-        return borders
-
-    @staticmethod
-    def get_bzn_borders():
-        """
-        Returns  country -  borders dictionary
         """
 
         borders = {}
