@@ -1,0 +1,20 @@
+{
+  "from_date": "14.01.2019",
+  "to_date": "16.01.2019",
+  "country": "FR",
+  "asset_type": [
+    "AC Link",
+    "DC Link",
+    "Substation",
+    "Transformer",
+    "Not specified"
+  ],
+  "outage_status": [
+    "Active"
+  ],
+  "outage_type": [
+    "Forced",
+    "Planned"
+  ],
+  "area_type": "BORDER_BZN"
+}

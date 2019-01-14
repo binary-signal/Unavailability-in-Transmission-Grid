@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging.handlers
 import pickle
 import sys
@@ -46,16 +47,19 @@ if __name__ == "__main__":
     default values specified in method. To decrease scrapping time and avoid
     getting banned from the server side, set country param.
     """
-    from_date = "01.01.2019"
-    to_date = "05.01.2019"
-    country = "DE"
-    asset_type = ["AC Link", "DC Link", "Substation", "Transformer",
-                  "Not specified"]
-    outage_status = ["Active"]
-    outage_type = ["Forced", "Planned"]
+    # read config file
+    conf_file = "config.json"
+    logging.info("reading config file")
+    with open(conf_file, "r") as fp:
+        config = json.load(fp)
 
-    # area_type = "BORDER_CTA"  # use this for Border - Control Area
-    area_type = "BORDER_BZN"  # use this for Border - Bidding Zone
+    from_date = config["from_date"]
+    to_date = config["to_date"]
+    country = config["country"]
+    asset_type = config["asset_type"]
+    outage_status = config["outage_status"]
+    outage_type = config["outage_type"]
+    area_type = config["area_type"]
 
     try:
         # fetch data
