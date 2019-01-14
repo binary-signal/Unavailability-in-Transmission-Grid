@@ -913,6 +913,7 @@ class API(object):
         for progress, i in enumerate(detail_id_list):
             try:
                 detail = api.details_grid_unavailability(i)
+                detail = api.parse_data_details(detail)
             except Exception as error:
                 logging.error(error)
                 raise error from None
