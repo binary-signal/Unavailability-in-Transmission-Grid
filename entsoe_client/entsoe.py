@@ -124,14 +124,14 @@ class API(object):
         else:
             return cls.__get(url, params)
 
-    def transmission_grid_unavailability(self, from_date, to_date, country=None,
+    def transmission_grid_unavailability(self, from_date, to_date, area_type,
+                                         country=None,
                                          asset_type=None, outage_type=None,
                                          outage_status=None,
-                                         area_type="BORDER_CTA"):
+                                         ):
         """
         Implements api method to get unavailability in transmission grid
         """
-
         if country is None:
             borders = "ALL"
         else:
