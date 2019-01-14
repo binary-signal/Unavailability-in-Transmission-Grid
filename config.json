@@ -16,5 +16,7 @@
     "Forced",
     "Planned"
   ],
-  "area_type": "BORDER_BZN"
+  "area_type": "BORDER_BZN",
+  "days_to_fetch": 7,
+  "skip_past_data": "True"
 }
