@@ -5,7 +5,13 @@ import pickle
 import sys
 from timeit import default_timer as timer
 
+import pandas as pd
+
 import entsoe_client
+
+pd.set_option('display.max_rows', 2048)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 2048)
 
 
 def human_time(start, end, msg=""):
@@ -31,6 +37,13 @@ if __name__ == "__main__":
             SocketHandler('localhost',
                           logging.handlers.DEFAULT_TCP_LOGGING_PORT)
         rootLogger.addHandler(socketHandler)
+
+        fileHandler = logging.FileHandler('logs.log')
+        f_format = logging.Formatter
+        logging.basicConfig(format="%(asctime)-5s "
+                                   "[%(levelname)-5.5s]  %(message)s",
+                            datefmt='%Y-%m-%d %H:%M:%S')
+        rootLogger.addHandler(fileHandler)
 
     logging.getLogger(__name__)
 
@@ -61,6 +74,9 @@ if __name__ == "__main__":
     outage_type = config["outage_type"]
     area_type = config["area_type"]
 
+    days_to_fetch = config["days_to_fetch"]
+    skip_past_data = bool(config["skip_past_data"])
+
     try:
         # fetch data
         data = entsoe. \
@@ -77,7 +93,10 @@ if __name__ == "__main__":
         ids = [d['detailId'] for d in data]
         details = entsoe_client.API.details_grid_unavailability_batch(entsoe,
                                                                       ids)
-        pickle.dump(details, open("data_detail.pckl", "wb"))
+        # merge data and detail into a singe data frame and output as csv
+        combined_data = [{**dat, **det} for dat, det in zip(data, details)]
+        data_df = pd.DataFrame(combined_data)
+        data_df.to_csv("data.csv", header=data_df.columns)
 
         """
         Time series data 
@@ -103,14 +122,17 @@ if __name__ == "__main__":
                              row['unavailabilityInterval']
                          )]
                         for row in data]
-        t_start = timer()
 
+        t_start = timer()
         timeseries = entsoe_client.API. \
             curve_grid_unavailability_batch(entsoe, ids_interval,
-                                            days_to_fetch=2,
-                                            skip_past_data=False)
+                                            days_to_fetch=days_to_fetch,
+                                            skip_past_data=skip_past_data)
 
-        pickle.dump(timeseries, open("data_series.pckl", "wb"))
+        list_dfs = [entsoe.curve_to_df(ts.get(list(ts.keys())[0]),
+                                       list(ts.keys())[0]) for ts in timeseries]
+        ts_df = pd.concat(list_dfs, ignore_index=False, sort=True)
+        ts_df.to_csv("timeseries.csv", header=ts_df.columns)
 
         logging.info("session completed successfully")
         human_time(t_start, timer(), "time series data ")
