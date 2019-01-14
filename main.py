@@ -45,6 +45,9 @@ if __name__ == "__main__":
     outage_status = ["Active"]
     outage_type = ["Forced", "Planned"]
 
+    area_type = "BORDER_CTA"  # use this for Border - Control Area
+    area_type = "BORDER_BZN"  # use this for Border - Bidding Zone
+
     try:
         # fetch data
         data = entsoe. \
@@ -52,7 +55,8 @@ if __name__ == "__main__":
                                              country=country,
                                              outage_type=outage_type,
                                              asset_type=asset_type,
-                                             outage_status=outage_status)
+                                             outage_status=outage_status,
+                                             area_type=area_type)
 
         pickle.dump(data, open("data.pckl", "wb"))
 
