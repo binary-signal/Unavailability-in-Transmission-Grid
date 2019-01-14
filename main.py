@@ -45,7 +45,7 @@ if __name__ == "__main__":
     outage_status = ["Active"]
     outage_type = ["Forced", "Planned"]
 
-    area_type = "BORDER_CTA"  # use this for Border - Control Area
+    #area_type = "BORDER_CTA"  # use this for Border - Control Area
     area_type = "BORDER_BZN"  # use this for Border - Bidding Zone
 
     try:
