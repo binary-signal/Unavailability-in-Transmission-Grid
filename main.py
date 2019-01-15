@@ -167,13 +167,13 @@ if __name__ == "__main__":
 
         logging.info("session completed successfully")
         human_time(t_series, timer(), "series ")
-        human_time(t_total, timer(), "total  ")
-        print(f"#requests {client.requests_num}")
         print("Done")
 
     except KeyboardInterrupt:
-        logging.info("Session terminated")
+        logging.info("session terminated by user")
     except Exception as error:
+        logging.error("session failed")
+
         print(error)
     finally:
         human_time(t_total, timer(), "total  ")
