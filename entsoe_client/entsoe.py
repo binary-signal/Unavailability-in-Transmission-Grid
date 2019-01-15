@@ -775,7 +775,7 @@ class EntsoeAPI(object):
         Implements an api call
         """
 
-        self.requests_num +=1
+        self.requests_num += 1
         if method not in self.__endpoints:
             raise EntsoeApiUnkownMethod
 
@@ -791,15 +791,15 @@ class EntsoeAPI(object):
             return self.__get(url, params)
 
     def transmission_grid_unavailability(
-        self,
-        *,
-        from_date,
-        to_date,
-        area_type,
-        country=None,
-        asset_type=None,
-        outage_type=None,
-        outage_status=None,
+            self,
+            *,
+            from_date,
+            to_date,
+            area_type,
+            country=None,
+            asset_type=None,
+            outage_type=None,
+            outage_status=None,
     ):
         """
         Implements api method to get unavailability in transmission grid
@@ -872,7 +872,7 @@ class EntsoeAPI(object):
             "sEcho": 2,  # what is this ?
             "iColumns": 7,
             "sColumns": "status,nature,unavailabilityInterval,"
-            "inArea,outArea,newNTC,",
+                        "inArea,outArea,newNTC,",
             "iDisplayStart": 0,
             "iDisplayLength": self.items_per_page,
             "amDataProp": [0, 1, 2, 3, 4, 5, 6],
@@ -1066,10 +1066,15 @@ class EntsoeAPI(object):
         Parses data returned from details_grid_unavailability method
         """
 
-        if len(tables_data) != 7:
+        if len(tables_data) < 7:
             raise EntsoeApiExcetpion(
                 f"invalid  size for details : " f"{tables_data}"
             )
+
+        if len(tables_data) > 7:
+            #FIXME fix this shit
+            logging.warning("Affected assets two rows")
+
         return {
             "comments": tables_data[0],
             "reason": tables_data[1],
@@ -1081,12 +1086,12 @@ class EntsoeAPI(object):
         }
 
     def curve_grid_unavailability(
-        self,
-        detail_id,
-        offset=0,
-        stop_offset=0,
-        batch_size=None,
-        batch_progress=None,
+            self,
+            detail_id,
+            offset=0,
+            stop_offset=0,
+            batch_size=None,
+            batch_progress=None,
     ):
         """
         Implements api method getDetailCurve
@@ -1177,7 +1182,7 @@ class EntsoeAPI(object):
 
     @staticmethod
     def curve_grid_unavailability_batch(
-        api, detail_id_list, from_date, to_date, delay=1
+            api, detail_id_list, from_date, to_date, delay=1
     ):
         total = len(detail_id_list)
         timeseries_data = []
