@@ -17,18 +17,22 @@ def human_time(start, end, msg=""):
     hours, rem = divmod(end - start, 3600)
     minutes, seconds = divmod(rem, 60)
     print(
-        "{}elapsed time {:0>2}:{:0>2}:{:05.2f}".format(
-            msg, int(hours), int(minutes), seconds
+        "{} {:0>2}:{:0>2}:{:0>2}".format(
+            msg, int(hours), int(minutes), int(seconds)
         )
     )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Unavailability in Transmission Grid")
+    parser = argparse.ArgumentParser(
+        description="Unavailability in Transmission Grid"
+    )
     parser.add_argument(
         "-v",
         "--verbose",
-        help="increase logs verbosity, " "output log to file or to " "external console",
+        help="increase logs verbosity, "
+        "output log to file or to "
+        "external console",
         action="store_true",
     )
 
@@ -48,18 +52,12 @@ if __name__ == "__main__":
         advanced = config["advanced"]
         session = config["session"]
 
-    # clean up logs file
-    try:
-        os.remove(advanced["log_file"])
-    except OSError:
-        pass
-
     try:
         os.mkdir(advanced["data_dir"])
     except FileExistsError:
         pass
-    finally:
-        out = advanced["data_dir"]
+
+    out = advanced["data_dir"]
 
     # setup logging
     rootLogger = logging.getLogger("")
@@ -80,7 +78,7 @@ if __name__ == "__main__":
     logging.info("\n" * 5 + "\t" * 3 + "--" * 10 + "  Session " + "--" * 10)
 
     t_total = timer()
-    entsoe = entsoe_client.API(items_per_page=100)
+    client = entsoe_client.EntsoeAPI(items_per_page=100)
 
     """
     scrape params 
@@ -107,7 +105,7 @@ if __name__ == "__main__":
     )
     try:
         # fetch data
-        data = entsoe.transmission_grid_unavailability(
+        data = client.transmission_grid_unavailability(
             from_date=from_date,
             to_date=to_date,
             area_type=area_type,
@@ -119,13 +117,20 @@ if __name__ == "__main__":
 
         # fetch details for data
         ids = [d["detailId"] for d in data]
-        details = entsoe_client.API.details_grid_unavailability_batch(entsoe, ids)
+        details = entsoe_client.EntsoeAPI.details_grid_unavailability_batch(
+            client, ids
+        )
 
         # merge data and detail into a single data frame and output as csv
         combined_data = [{**dat, **det} for dat, det in zip(data, details)]
         data_df = pd.DataFrame(combined_data)
-        data_df.to_csv(os.path.join(out, f"{name_format}.csv"), header=data_df.columns)
-        json.dump({"data": combined_data}, open(os.path.join(out, "data.json"), "w"))
+
+        data_df.to_csv(
+            os.path.join(out, f"{name_format}.csv"), header=data_df.columns
+        )
+        json.dump(
+            {"data": combined_data}, open(os.path.join(out, "data.json"), "w")
+        )
 
         """
         Time series data    
@@ -133,34 +138,38 @@ if __name__ == "__main__":
         ids_interval = [
             [
                 row["detailId"],
-                *entsoe.parse_unavailability_interval(row["unavailabilityInterval"]),
+                row["unavailabilityStart"],
+                row["unavailabilityEnd"],
             ]
             for row in data
         ]
 
         t_series = timer()
-        timeseries = entsoe_client.API.curve_grid_unavailability_batch(
-            entsoe, ids_interval, from_date, to_date
+        timeseries = entsoe_client.EntsoeAPI.curve_grid_unavailability_batch(
+            client, ids_interval, from_date, to_date
         )
 
         json.dump(
-            {"timeseries": timeseries}, open(os.path.join(out, "timeseries.json"), "w")
+            {"timeseries": timeseries},
+            open(os.path.join(out, "timeseries.json"), "w"),
         )
 
         ids = [list(ts.keys())[0] for ts in timeseries]
         timeseries = [ts[list(ts.keys())[0]] for ts in timeseries]
-        df_list = [entsoe.curve_to_df(ts) for ts in timeseries]
+        df_list = [client.curve_to_df(ts) for ts in timeseries]
 
         for f_name, df in zip(ids, df_list):
             df.to_csv(
-                os.path.join(out, f"{name_format}_{f_name}.csv"), header=df.columns
+                os.path.join(out, f"{name_format}_{f_name}.csv"),
+                header=df.columns,
             )
 
         logging.info("session completed successfully")
-        human_time(t_series, timer(), "time series ")
-        human_time(t_total, timer(), "total ")
+        human_time(t_series, timer(), "series ")
+        human_time(t_total, timer(), "total  ")
         print("Done")
 
     except KeyboardInterrupt:
         logging.info("Session terminated")
+    finally:
         sys.exit(0)
