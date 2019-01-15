@@ -23,6 +23,6 @@
     "log_file": "logs.log",
     "time_delay": 1,
     "data_dir": "session_data",
-    "skip_details": "True"
+    "skip_details": true
   }
 }
