@@ -4,11 +4,9 @@ import logging.handlers
 import os
 import sys
 from timeit import default_timer as timer
-
 import pandas as pd
 
 import entsoe_client
-
 
 CONF_FILE = "config.json"
 
@@ -23,6 +21,40 @@ def human_time(start, end, msg=""):
     )
 
 
+def start_recovery():
+    logging.info("resuming session starting recovery process")
+    recovery_file_path = os.path.join(out, name_format + ".csv")
+    try:
+        fp = open(recovery_file_path, "r")
+    except FileNotFoundError:
+        logging.error(f"Recovery file is missing: {recovery_file_path}")
+        sys.exit("recovery file missing, session recovery failed")
+    else:
+        # load file names from output dir
+        files = [
+            f
+            for f in os.listdir(out)
+            if os.path.isfile(os.path.join(out, f))
+            if name_format + ".csv" not in str(f)
+        ]
+
+        ids = [f.rsplit("_")[1] for f in files]
+
+        df = pd.read_csv(fp)
+
+        pending = [
+            [
+                row["detailId"],
+                row["unavailabilityStart"],
+                row["unavailabilityEnd"],
+            ]
+            for (i, row) in df.iterrows()
+            if row["detailId"] not in ids
+        ]
+
+    return pending
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Unavailability in Transmission Grid"
@@ -33,6 +65,13 @@ if __name__ == "__main__":
         help="increase logs verbosity, "
         "output log to file or to "
         "external console",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--resume",
+        help="resume a session after it crashed",
         action="store_true",
     )
 
@@ -59,13 +98,14 @@ if __name__ == "__main__":
 
     out = advanced["data_dir"]
     time_delay = advanced["time_delay"]
+    skip_details = bool(advanced["skip_details"])
 
     # setup logging
     rootLogger = logging.getLogger("")
     if args.verbose:
         rootLogger.setLevel(logging.INFO)
 
-        fileHandler = logging.FileHandler(advanced["log_file"], mode='w')
+        fileHandler = logging.FileHandler(advanced["log_file"], mode="w")
         f_format = logging.Formatter(
             fmt="%(asctime)-5s " "[%(levelname)-5.5s]  %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
@@ -77,7 +117,6 @@ if __name__ == "__main__":
     logging.getLogger(__name__)
 
     logging.info("\n" * 5 + "\t" * 3 + "--" * 10 + "  Session " + "--" * 10)
-
     t_total = timer()
     client = entsoe_client.EntsoeAPI(items_per_page=100)
 
@@ -104,66 +143,70 @@ if __name__ == "__main__":
         f"{country}_{area_type}_{from_date.replace('.', '_')}"
         f"_{to_date.replace('.', '_')}"
     )
+
     try:
-        # fetch data
-        data = client.transmission_grid_unavailability(
-            from_date=from_date,
-            to_date=to_date,
-            area_type=area_type,
-            country=country,
-            outage_type=outage_type,
-            asset_type=asset_type,
-            outage_status=outage_status,
-        )
+        if args.resume:
+            ids_interval = start_recovery()
+            print(ids_interval)
 
-        # fetch details for data
-        ids = [d["detailId"] for d in data]
-        details = entsoe_client.EntsoeAPI.details_grid_unavailability_batch(
-            client, ids, delay=time_delay
-        )
+        else:
+            # fetch data
+            data = client.transmission_grid_unavailability(
+                from_date=from_date,
+                to_date=to_date,
+                area_type=area_type,
+                country=country,
+                outage_type=outage_type,
+                asset_type=asset_type,
+                outage_status=outage_status,
+            )
 
-        # merge data and detail into a single data frame and output as csv
-        combined_data = [{**dat, **det} for dat, det in zip(data, details)]
-        data_df = pd.DataFrame(combined_data)
+            if not skip_details:
+                logging.info("skip details download")
+                # fetch details for data
+                ids = [d["detailId"] for d in data]
+                details = entsoe_client.EntsoeAPI.details_grid_unavailability_batch(
+                    client, ids, delay=time_delay
+                )
 
-        data_df.to_csv(
-            os.path.join(out, f"{name_format}.csv"), header=data_df.columns
-        )
-        json.dump(
-            {"data": combined_data}, open(os.path.join(out, "data.json"), "w")
-        )
+                # merge data and detail into a single data frame and output as csv
+                data = [{**dat, **det} for dat, det in zip(data, details)]
 
-        """
-        Time series data    
-        """
-        ids_interval = [
-            [
-                row["detailId"],
-                row["unavailabilityStart"],
-                row["unavailabilityEnd"],
+            data_df = pd.DataFrame(data)
+            data_df.to_csv(
+                os.path.join(out, f"{name_format}.csv"), header=data_df.columns
+            )
+
+            # FIXME keep this or no ?
+            """
+            json.dump(
+                {"data": combined_data},
+                open(os.path.join(out, "data.json"), "w"),
+            )
+            """
+
+            """
+            Time series data    
+            """
+            ids_interval = [
+                [
+                    row["detailId"],
+                    row["unavailabilityStart"],
+                    row["unavailabilityEnd"],
+                ]
+                for row in data
             ]
-            for row in data
-        ]
 
         t_series = timer()
-        timeseries = entsoe_client.EntsoeAPI.curve_grid_unavailability_batch(
-            client, ids_interval, from_date, to_date, delay=time_delay
+        entsoe_client.EntsoeAPI.curve_grid_unavailability_batch(
+            client,
+            ids_interval,
+            from_date,
+            to_date,
+            delay=time_delay,
+            out_dir=out,
+            name_format=name_format,
         )
-
-        json.dump(
-            {"timeseries": timeseries},
-            open(os.path.join(out, "timeseries.json"), "w"),
-        )
-
-        ids = [list(ts.keys())[0] for ts in timeseries]
-        timeseries = [ts[list(ts.keys())[0]] for ts in timeseries]
-        df_list = [client.curve_to_df(ts) for ts in timeseries]
-
-        for f_name, df in zip(ids, df_list):
-            df.to_csv(
-                os.path.join(out, f"{name_format}_{f_name}.csv"),
-                header=df.columns,
-            )
 
         logging.info("session completed successfully")
         human_time(t_series, timer(), "series ")
@@ -179,5 +222,3 @@ if __name__ == "__main__":
         human_time(t_total, timer(), "total  ")
         print(f"#requests {client.requests_num}")
         sys.exit(0)
-
-
