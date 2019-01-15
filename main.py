@@ -58,6 +58,7 @@ if __name__ == "__main__":
         pass
 
     out = advanced["data_dir"]
+    time_delay = advanced["time_delay"]
 
     # setup logging
     rootLogger = logging.getLogger("")
@@ -118,7 +119,7 @@ if __name__ == "__main__":
         # fetch details for data
         ids = [d["detailId"] for d in data]
         details = entsoe_client.EntsoeAPI.details_grid_unavailability_batch(
-            client, ids
+            client, ids, delay=time_delay
         )
 
         # merge data and detail into a single data frame and output as csv
@@ -146,7 +147,7 @@ if __name__ == "__main__":
 
         t_series = timer()
         timeseries = entsoe_client.EntsoeAPI.curve_grid_unavailability_batch(
-            client, ids_interval, from_date, to_date
+            client, ids_interval, from_date, to_date, delay=time_delay
         )
 
         json.dump(
@@ -167,6 +168,7 @@ if __name__ == "__main__":
         logging.info("session completed successfully")
         human_time(t_series, timer(), "series ")
         human_time(t_total, timer(), "total  ")
+        print(f"number of requests {client.requests_num}")
         print("Done")
 
     except KeyboardInterrupt:
