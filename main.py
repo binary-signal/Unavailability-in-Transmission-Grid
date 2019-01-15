@@ -168,7 +168,7 @@ if __name__ == "__main__":
         logging.info("session completed successfully")
         human_time(t_series, timer(), "series ")
         human_time(t_total, timer(), "total  ")
-        print(f"number of requests {client.requests_num}")
+        print(f"#requests {client.requests_num}")
         print("Done")
 
     except KeyboardInterrupt:
