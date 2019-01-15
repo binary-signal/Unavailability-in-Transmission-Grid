@@ -714,12 +714,14 @@ class EntsoeAPI(object):
         if items_per_page not in self.__pagination:
             raise ValueError("item_per_page domain is (10, 25, 50, 100)")
         self.items_per_page = items_per_page
+        self.requests_num = 0
 
     @classmethod
     def __post(cls, url, params, data):
         """
         Low Level API call
         """
+
 
         try:
             response = requests.post(
@@ -765,25 +767,26 @@ class EntsoeAPI(object):
         else:
             return response.text
 
-    @classmethod
-    def api_call(cls, method, params=(), data=None):
+
+    def api_call(self, method, params=(), data=None):
         """
         Implements an api call
         """
 
-        if method not in cls.__endpoints:
+        self.requests_num +=1
+        if method not in self.__endpoints:
             raise EntsoeApiUnkownMethod
 
-        if "POST" in cls.__endpoints[method] and data is None:
+        if "POST" in self.__endpoints[method] and data is None:
             raise EntsoeApiPOSTMethodMissingData
 
-        url = cls.__base_url + method
+        url = self.__base_url + method
 
-        if cls.__endpoints[method] is "POST":
+        if self.__endpoints[method] is "POST":
             data = json.dumps(data)
-            return cls.__post(url, params, data)
+            return self.__post(url, params, data)
         else:
-            return cls.__get(url, params)
+            return self.__get(url, params)
 
     def transmission_grid_unavailability(
         self,
@@ -1148,7 +1151,7 @@ class EntsoeAPI(object):
         return "{:.10f}".format(time.time() * 1000).split(".")[0]
 
     @staticmethod
-    def details_grid_unavailability_batch(api, detail_id_list):
+    def details_grid_unavailability_batch(api, detail_id_list, delay=1):
         logging.info("start downloading detail data\n")
         total = len(detail_id_list)
         detail_data = []
@@ -1164,7 +1167,7 @@ class EntsoeAPI(object):
                 prog = round(100 * ((progress + 1) / total))
                 print(f"[2/3] detail {'{:4d}'.format(prog)}%", end="\r")
                 logging.info(f"progress [{progress + 1} / {total}] detail {i}")
-                time.sleep(0.5)
+                time.sleep(delay)
 
         logging.info("detail download completed\n\n")
         print("\n")
@@ -1172,7 +1175,7 @@ class EntsoeAPI(object):
 
     @staticmethod
     def curve_grid_unavailability_batch(
-        api, detail_id_list, from_date, to_date
+        api, detail_id_list, from_date, to_date, delay=1
     ):
         total = len(detail_id_list)
         timeseries_data = []
@@ -1201,6 +1204,7 @@ class EntsoeAPI(object):
 
             prog = round(100 * ((progress + 1) / total))
             print(f"[3/3] series {'{:4d}'.format(prog)}%", end="\r")
+            time.sleep(delay)
         print("\n")
         logging.info("time series download completed\n\n")
         return timeseries_data
