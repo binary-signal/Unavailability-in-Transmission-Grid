@@ -3,6 +3,7 @@ import json
 import logging
 import time
 import pprint
+import os
 
 import pandas as pd
 import pytz
@@ -791,15 +792,15 @@ class EntsoeAPI(object):
             return self.__get(url, params)
 
     def transmission_grid_unavailability(
-            self,
-            *,
-            from_date,
-            to_date,
-            area_type,
-            country=None,
-            asset_type=None,
-            outage_type=None,
-            outage_status=None,
+        self,
+        *,
+        from_date,
+        to_date,
+        area_type,
+        country=None,
+        asset_type=None,
+        outage_type=None,
+        outage_status=None,
     ):
         """
         Implements api method to get unavailability in transmission grid
@@ -872,7 +873,7 @@ class EntsoeAPI(object):
             "sEcho": 2,  # what is this ?
             "iColumns": 7,
             "sColumns": "status,nature,unavailabilityInterval,"
-                        "inArea,outArea,newNTC,",
+            "inArea,outArea,newNTC,",
             "iDisplayStart": 0,
             "iDisplayLength": self.items_per_page,
             "amDataProp": [0, 1, 2, 3, 4, 5, 6],
@@ -1072,7 +1073,7 @@ class EntsoeAPI(object):
             )
 
         if len(tables_data) > 7:
-            #FIXME fix this shit
+            # FIXME fix this shit
             logging.warning("Affected assets two rows")
 
         return {
@@ -1086,12 +1087,12 @@ class EntsoeAPI(object):
         }
 
     def curve_grid_unavailability(
-            self,
-            detail_id,
-            offset=0,
-            stop_offset=0,
-            batch_size=None,
-            batch_progress=None,
+        self,
+        detail_id,
+        offset=0,
+        stop_offset=0,
+        batch_size=None,
+        batch_progress=None,
     ):
         """
         Implements api method getDetailCurve
@@ -1114,7 +1115,6 @@ class EntsoeAPI(object):
         while True:
             json_curve = self.api_call("getDetailCurve/", params, data)
             curve_frag = json_curve["aaData"]
-            # pprint.pprint(curve_frag, indent=2)
 
             have += len(curve_frag)
 
@@ -1182,10 +1182,9 @@ class EntsoeAPI(object):
 
     @staticmethod
     def curve_grid_unavailability_batch(
-            api, detail_id_list, from_date, to_date, delay=1
+        api, detail_id_list, from_date, to_date, name_format, out_dir, delay=1
     ):
         total = len(detail_id_list)
-        timeseries_data = []
 
         logging.info("start downloading time series data\n")
         for progress, i in enumerate(detail_id_list):
@@ -1195,7 +1194,7 @@ class EntsoeAPI(object):
             )
 
             try:
-                detail = api.curve_grid_unavailability(
+                timeseries = api.curve_grid_unavailability(
                     i[0],
                     offset,
                     stop_offset,
@@ -1206,15 +1205,17 @@ class EntsoeAPI(object):
                 logging.error(error)
                 raise error from None
             else:
-
-                timeseries_data.append({i[0]: detail})
+                ts_df = api.curve_to_df(timeseries)
+                ts_df.to_csv(
+                    os.path.join(out_dir, f"{name_format}_{i[0]}.csv"),
+                    header=ts_df.columns,
+                )
 
             prog = round(100 * ((progress + 1) / total))
             print(f"[3/3] series {'{:4d}'.format(prog)}%", end="\r")
             time.sleep(delay)
         print("\n")
         logging.info("time series download completed\n\n")
-        return timeseries_data
 
     @staticmethod
     def parse_borders_from_html_code():
