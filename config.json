@@ -1,8 +1,8 @@
 {
   "session": {
-    "from_date": "14.01.2019",
-    "to_date": "14.01.2020",
-    "country": "FR",
+    "from_date": "01.01.2018",
+    "to_date": "15.01.2020",
+    "country": "AT",
     "asset_type": [
       "AC Link",
       "DC Link",
@@ -22,6 +22,7 @@
   "advanced": {
     "log_file": "logs.log",
     "time_delay": 1,
-    "data_dir": "data"
+    "data_dir": "session_data",
+    "skip_details": "True"
   }
 }
