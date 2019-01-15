@@ -8,6 +8,7 @@ import pandas as pd
 import pytz
 import requests
 from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 
 from .exceptions import *
 
@@ -710,6 +711,8 @@ class EntsoeAPI(object):
 
     __pagination = [10, 25, 50, 100]
 
+    ua = UserAgent()
+
     def __init__(self, items_per_page=100):
         if items_per_page not in self.__pagination:
             raise ValueError("item_per_page domain is (10, 25, 50, 100)")
@@ -722,7 +725,7 @@ class EntsoeAPI(object):
         Low Level API call
         """
 
-
+        cls.__post_headers.update({"User-Agent": cls.ua.random})
         try:
             response = requests.post(
                 url, params=params, data=data, headers=cls.__post_headers
@@ -754,7 +757,7 @@ class EntsoeAPI(object):
         """
         Low Level API call
         """
-
+        cls.__get_headers.update({"User-Agent": cls.ua.random})
         try:
             response = requests.get(
                 url, params=params, headers=cls.__get_headers
@@ -766,7 +769,6 @@ class EntsoeAPI(object):
 
         else:
             return response.text
-
 
     def api_call(self, method, params=(), data=None):
         """
