@@ -38,7 +38,8 @@ def start_recovery():
             if name_format + ".csv" not in str(f)
         ]
 
-        ids = [f.rsplit("_")[1] for f in files]
+        ids = [f.rsplit("_")[-1].split(".")[0] for f in files]
+
 
         df = pd.read_csv(fp)
 
@@ -147,8 +148,6 @@ if __name__ == "__main__":
     try:
         if args.resume:
             ids_interval = start_recovery()
-            print(ids_interval)
-
         else:
             # fetch data
             data = client.transmission_grid_unavailability(
