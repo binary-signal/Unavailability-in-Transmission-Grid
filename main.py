@@ -173,5 +173,11 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         logging.info("Session terminated")
+    except Exception as error:
+        print(error)
     finally:
+        human_time(t_total, timer(), "total  ")
+        print(f"#requests {client.requests_num}")
         sys.exit(0)
+
+
