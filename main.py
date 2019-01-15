@@ -64,7 +64,7 @@ if __name__ == "__main__":
     if args.verbose:
         rootLogger.setLevel(logging.INFO)
 
-        fileHandler = logging.FileHandler(advanced["log_file"])
+        fileHandler = logging.FileHandler(advanced["log_file"], mode='w')
         f_format = logging.Formatter(
             fmt="%(asctime)-5s " "[%(levelname)-5.5s]  %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
