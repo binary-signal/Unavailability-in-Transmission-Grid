@@ -9,7 +9,8 @@ import pandas as pd
 import pytz
 import requests
 from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from .exceptions import *
 
@@ -712,24 +713,29 @@ class EntsoeAPI(object):
 
     __pagination = [10, 25, 50, 100]
 
-    ua = UserAgent()
-
-    def __init__(self, items_per_page=100):
+    def __init__(
+        self, items_per_page=100, connection_attempts=5, backoff_factor=0.5
+    ):
         if items_per_page not in self.__pagination:
             raise ValueError("item_per_page domain is (10, 25, 50, 100)")
         self.items_per_page = items_per_page
         self.requests_num = 0
+        self.session = requests.Session()
+        retry = Retry(
+            connect=connection_attempts, backoff_factor=backoff_factor
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
 
-    @classmethod
-    def __post(cls, url, params, data):
+    def __post(self, url, params, data):
         """
         Low Level API call
         """
 
-        cls.__post_headers.update({"User-Agent": cls.ua.random})
         try:
-            response = requests.post(
-                url, params=params, data=data, headers=cls.__post_headers
+            response = self.session.post(
+                url, params=params, data=data, headers=self.__post_headers
             )
             response.raise_for_status()
         except requests.ConnectionError as error:
@@ -753,15 +759,13 @@ class EntsoeAPI(object):
         else:
             return json.loads(response.text)
 
-    @classmethod
-    def __get(cls, url, params):
+    def __get(self, url, params):
         """
         Low Level API call
         """
-        cls.__get_headers.update({"User-Agent": cls.ua.random})
         try:
-            response = requests.get(
-                url, params=params, headers=cls.__get_headers
+            response = self.session.get(
+                url, params=params, headers=self.__get_headers
             )
             response.raise_for_status()
         except (requests.HTTPError, requests.ConnectionError) as error:
@@ -790,6 +794,9 @@ class EntsoeAPI(object):
             return self.__post(url, params, data)
         else:
             return self.__get(url, params)
+
+    def close(self):
+        self.session.close()
 
     def transmission_grid_unavailability(
         self,

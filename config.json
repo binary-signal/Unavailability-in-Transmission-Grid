@@ -23,6 +23,8 @@
     "log_file": "logs.log",
     "time_delay": 1,
     "data_dir": "session_data",
+    "connection": 5,
+    "backoff_factor": 0.5,
     "skip_details": true
   }
 }

@@ -40,7 +40,6 @@ def start_recovery():
 
         ids = [f.rsplit("_")[-1].split(".")[0] for f in files]
 
-
         df = pd.read_csv(fp)
 
         pending = [
@@ -92,14 +91,16 @@ if __name__ == "__main__":
         advanced = config["advanced"]
         session = config["session"]
 
-    try:
-        os.mkdir(advanced["data_dir"])
-    except FileExistsError:
-        pass
-
     out = advanced["data_dir"]
     time_delay = advanced["time_delay"]
-    skip_details = bool(advanced["skip_details"])
+    skip_details = advanced["skip_details"]
+    connection = advanced["connection"]
+    backoff_factor = advanced["backoff_factor"]
+
+    try:
+        os.mkdir(out)
+    except FileExistsError:
+        pass
 
     # setup logging
     rootLogger = logging.getLogger("")
@@ -119,7 +120,11 @@ if __name__ == "__main__":
 
     logging.info("\n" * 5 + "\t" * 3 + "--" * 10 + "  Session " + "--" * 10)
     t_total = timer()
-    client = entsoe_client.EntsoeAPI(items_per_page=100)
+    client = entsoe_client.EntsoeAPI(
+        connection_attempts=connection,
+        backoff_factor=backoff_factor,
+        items_per_page=100,
+    )
 
     """
     scrape params 
@@ -218,6 +223,7 @@ if __name__ == "__main__":
 
         print(error)
     finally:
+        client.close()
         human_time(t_total, timer(), "total  ")
         print(f"#requests {client.requests_num}")
         sys.exit(0)
