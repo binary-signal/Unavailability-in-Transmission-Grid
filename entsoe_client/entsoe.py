@@ -721,7 +721,7 @@ class EntsoeAPI(object):
         items_per_page=100,
         connection=5,
         backoff_factor=0.5,
-        conn_rst_int=900,
+        conn_rst_int=300,
     ):
         self.connection = connection
         self.backoff_factor = backoff_factor
@@ -746,12 +746,14 @@ class EntsoeAPI(object):
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
+        self.__post_headers.update({"User-Agent": random.choice(user_agents)})
+        self.__get_headers.update({"User-Agent": random.choice(user_agents)})
 
     def __post(self, url, params, data):
         """
         Low Level API call
         """
-        self.__post_headers.update({"User-Agent": random.choice(user_agents)})
+
         try:
             response = self.session.post(
                 url,
@@ -786,7 +788,7 @@ class EntsoeAPI(object):
         """
         Low Level API call
         """
-        self.__get_headers.update({"User-Agent": random.choice(user_agents)})
+
         try:
             response = self.session.get(
                 url, params=params, headers=self.__get_headers, timeout=(5, 25)
@@ -806,8 +808,9 @@ class EntsoeAPI(object):
         t_now = timer()
         if t_now - self.s_time > self.conn_rst_int:
             self.s_time = t_now
-            logging.info("resetting connection to server ")
+            logging.info("make new connection to server and change user-agent ")
             self.__restart_session()
+
 
         self.requests_num += 1
         if method not in self.__endpoints:
