@@ -735,7 +735,11 @@ class EntsoeAPI(object):
 
         try:
             response = self.session.post(
-                url, params=params, data=data, headers=self.__post_headers
+                url,
+                params=params,
+                data=data,
+                headers=self.__post_headers,
+                timeout=(5, 25),
             )
             response.raise_for_status()
         except requests.ConnectionError as error:
@@ -765,7 +769,7 @@ class EntsoeAPI(object):
         """
         try:
             response = self.session.get(
-                url, params=params, headers=self.__get_headers
+                url, params=params, headers=self.__get_headers, timeout=(5, 25)
             )
             response.raise_for_status()
         except (requests.HTTPError, requests.ConnectionError) as error:
