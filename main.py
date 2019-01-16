@@ -100,7 +100,6 @@ if __name__ == "__main__":
     connection = advanced["connection"]
     backoff_factor = advanced["backoff_factor"]
 
-
     try:
         os.mkdir(out)
     except FileExistsError:
@@ -125,9 +124,7 @@ if __name__ == "__main__":
     logging.info("\n" * 5 + "\t" * 3 + "--" * 10 + "  Session " + "--" * 10)
     t_total = timer()
     client = entsoe_client.EntsoeAPI(
-        connection_attempts=connection,
-        backoff_factor=backoff_factor,
-        items_per_page=100,
+        connection=connection, backoff_factor=backoff_factor, items_per_page=100
     )
 
     """
@@ -154,6 +151,7 @@ if __name__ == "__main__":
         f"_{to_date.replace('.', '_')}"
     )
 
+    exit_code = 0
     try:
         if args.resume:
             ids_interval = start_recovery()
@@ -185,17 +183,7 @@ if __name__ == "__main__":
                 os.path.join(out, f"{name_format}.csv"), header=data_df.columns
             )
 
-            # FIXME keep this or no ?
-            """
-            json.dump(
-                {"data": combined_data},
-                open(os.path.join(out, "data.json"), "w"),
-            )
-            """
-
-            """
-            Time series data    
-            """
+            # download time series data
             ids_interval = [
                 [
                     row["detailId"],
@@ -215,13 +203,17 @@ if __name__ == "__main__":
             name_format=name_format,
         )
 
-        logging.info("session completed successfully")
-        print("Done")
-
     except KeyboardInterrupt:
         logging.info("session terminated by user")
+        exit_code = 0
+    except Exception as error:
+        logging.error(error)
+        exit_code = -1
+    else:
+        logging.info("session completed successfully")
+        print("Done")
+        exit_code = 0
     finally:
-        client.close()
         human_time(t_total, timer(), "run time")
         print(f"#requests {client.requests_num}")
-        sys.exit(0)
+        sys.exit(exit_code)
