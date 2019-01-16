@@ -30,7 +30,7 @@ def start_recovery():
         fp = open(recovery_file_path, "r")
     except FileNotFoundError:
         logging.error(f"Recovery file is missing: {recovery_file_path}")
-        sys.exit("recovery file missing, session recovery failed")
+        sys.exit(-1)
     else:
         # load file names from output dir
         files = [
@@ -215,5 +215,6 @@ if __name__ == "__main__":
         exit_code = 0
     finally:
         human_time(t_total, timer(), "run time")
+        logging.info(f"#requests {client.requests_num}")
         print(f"#requests {client.requests_num}")
         sys.exit(exit_code)
