@@ -5,6 +5,7 @@ import time
 import pprint
 import os
 from timeit import default_timer as timer
+import random
 
 import pandas as pd
 import pytz
@@ -14,6 +15,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .exceptions import *
+from .user_agents import user_agents
 
 
 class EntsoeAPI(object):
@@ -749,7 +751,7 @@ class EntsoeAPI(object):
         """
         Low Level API call
         """
-
+        self.__post_headers.update({"User-Agent": random.choice(user_agents)})
         try:
             response = self.session.post(
                 url,
@@ -784,6 +786,7 @@ class EntsoeAPI(object):
         """
         Low Level API call
         """
+        self.__get_headers.update({"User-Agent": random.choice(user_agents)})
         try:
             response = self.session.get(
                 url, params=params, headers=self.__get_headers, timeout=(5, 25)
