@@ -4,6 +4,7 @@ import logging
 import time
 import pprint
 import os
+from timeit import default_timer as timer
 
 import pandas as pd
 import pytz
@@ -714,15 +715,31 @@ class EntsoeAPI(object):
     __pagination = [10, 25, 50, 100]
 
     def __init__(
-        self, items_per_page=100, connection_attempts=5, backoff_factor=0.5
+        self,
+        items_per_page=100,
+        connection=5,
+        backoff_factor=0.5,
+        conn_rst_int=900,
     ):
+        self.connection = connection
+        self.backoff_factor = backoff_factor
+        self.conn_rst_int = conn_rst_int
         if items_per_page not in self.__pagination:
             raise ValueError("item_per_page domain is (10, 25, 50, 100)")
         self.items_per_page = items_per_page
         self.requests_num = 0
         self.session = requests.Session()
+        retry = Retry(connect=connection, backoff_factor=backoff_factor)
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+        self.s_time = timer()
+
+    def __restart_session(self):
+        self.session.close()
+        self.session = requests.Session()
         retry = Retry(
-            connect=connection_attempts, backoff_factor=backoff_factor
+            connect=self.connection, backoff_factor=self.backoff_factor
         )
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount("http://", adapter)
@@ -783,6 +800,11 @@ class EntsoeAPI(object):
         """
         Implements an api call
         """
+        t_now = timer()
+        if t_now - self.s_time > self.conn_rst_int:
+            self.s_time = t_now
+            logging.info("resetting connection to server ")
+            self.__restart_session()
 
         self.requests_num += 1
         if method not in self.__endpoints:
@@ -800,7 +822,11 @@ class EntsoeAPI(object):
             return self.__get(url, params)
 
     def close(self):
+        """
+        Close a requests session
+        """
         self.session.close()
+        self.session = None
 
     def transmission_grid_unavailability(
         self,
@@ -1104,7 +1130,7 @@ class EntsoeAPI(object):
         stop_offset=0,
         batch_size=None,
         batch_progress=None,
-        delay = 1
+        delay=1,
     ):
         """
         Implements api method getDetailCurve
@@ -1214,7 +1240,7 @@ class EntsoeAPI(object):
                     stop_offset,
                     batch_progress=progress + 1,
                     batch_size=total,
-                    delay=delay
+                    delay=delay,
                 )
             except Exception as error:
                 logging.error(error)
@@ -1225,7 +1251,7 @@ class EntsoeAPI(object):
                     os.path.join(out_dir, f"{name_format}_{i[0]}.csv"),
                     header=ts_df.columns,
                 )
-                time.sleep(1)
+                time.sleep(delay)
 
             prog = round(100 * ((progress + 1) / total))
             print(f"[3/3] series {'{:4d}'.format(prog)}%", end="\r")
@@ -1284,6 +1310,7 @@ class EntsoeAPI(object):
         td = to_date - from_date
         stop_offset = off_set + 24 * td.days
 
+        """
         logging.info(
             f"\n"
             f"start_date:{start_date} - end_date:{end_date}\n"
@@ -1294,4 +1321,5 @@ class EntsoeAPI(object):
 
         if stop_offset > max_stop_offset:
             logging.info("WARN:stop_offset greater than max_offset")
+        """
         return off_set, stop_offset
