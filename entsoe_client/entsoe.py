@@ -811,7 +811,6 @@ class EntsoeAPI(object):
             logging.info("make new connection to server and change user-agent ")
             self.__restart_session()
 
-
         self.requests_num += 1
         if method not in self.__endpoints:
             raise EntsoeApiUnkownMethod
