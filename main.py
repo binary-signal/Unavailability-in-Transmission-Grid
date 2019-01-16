@@ -4,6 +4,8 @@ import logging.handlers
 import os
 import sys
 from timeit import default_timer as timer
+import random
+
 import pandas as pd
 
 import entsoe_client
@@ -52,6 +54,7 @@ def start_recovery():
             if row["detailId"] not in ids
         ]
 
+    random.shuffle(pending)
     return pending
 
 
@@ -96,6 +99,7 @@ if __name__ == "__main__":
     skip_details = advanced["skip_details"]
     connection = advanced["connection"]
     backoff_factor = advanced["backoff_factor"]
+
 
     try:
         os.mkdir(out)
@@ -201,7 +205,6 @@ if __name__ == "__main__":
                 for row in data
             ]
 
-        t_series = timer()
         entsoe_client.EntsoeAPI.curve_grid_unavailability_batch(
             client,
             ids_interval,
@@ -213,17 +216,12 @@ if __name__ == "__main__":
         )
 
         logging.info("session completed successfully")
-        human_time(t_series, timer(), "series ")
         print("Done")
 
     except KeyboardInterrupt:
         logging.info("session terminated by user")
-    except Exception as error:
-        logging.error("session failed")
-
-        print(error)
     finally:
         client.close()
-        human_time(t_total, timer(), "total  ")
+        human_time(t_total, timer(), "run time")
         print(f"#requests {client.requests_num}")
         sys.exit(0)

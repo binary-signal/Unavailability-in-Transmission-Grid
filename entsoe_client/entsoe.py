@@ -1104,6 +1104,7 @@ class EntsoeAPI(object):
         stop_offset=0,
         batch_size=None,
         batch_progress=None,
+        delay = 1
     ):
         """
         Implements api method getDetailCurve
@@ -1147,6 +1148,8 @@ class EntsoeAPI(object):
                 break
             elif have >= stop_offset:
                 break
+            else:
+                time.sleep(delay)
 
         return timeseries_data
 
@@ -1211,6 +1214,7 @@ class EntsoeAPI(object):
                     stop_offset,
                     batch_progress=progress + 1,
                     batch_size=total,
+                    delay=delay
                 )
             except Exception as error:
                 logging.error(error)
@@ -1221,10 +1225,10 @@ class EntsoeAPI(object):
                     os.path.join(out_dir, f"{name_format}_{i[0]}.csv"),
                     header=ts_df.columns,
                 )
+                time.sleep(1)
 
             prog = round(100 * ((progress + 1) / total))
             print(f"[3/3] series {'{:4d}'.format(prog)}%", end="\r")
-            time.sleep(delay)
         print("\n")
         logging.info("time series download completed\n\n")
 

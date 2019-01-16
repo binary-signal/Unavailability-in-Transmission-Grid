@@ -1,7 +1,7 @@
 {
   "session": {
     "from_date": "01.01.2018",
-    "to_date": "15.01.2020",
+    "to_date": "15.01.2019",
     "country": "AT",
     "asset_type": [
       "AC Link",
@@ -21,9 +21,9 @@
   },
   "advanced": {
     "log_file": "logs.log",
-    "time_delay": 1,
+    "time_delay": 2,
     "data_dir": "session_data",
-    "connection": 5,
+    "connection": 10,
     "backoff_factor": 0.5,
     "skip_details": true
   }
