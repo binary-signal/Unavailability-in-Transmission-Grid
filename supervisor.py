@@ -23,9 +23,9 @@ if __name__ == "__main__":
     args = sys.argv[2:]
 
     if (
-            os.path.exists(python_script)
-            and os.path.isfile(python_script)
-            and os.path.split(os.path.abspath(python_script))[-1].endswith(".py")
+        os.path.exists(python_script)
+        and os.path.isfile(python_script)
+        and os.path.split(os.path.abspath(python_script))[-1].endswith(".py")
     ):
 
         crashes = 0
@@ -60,7 +60,6 @@ if __name__ == "__main__":
                         return "{:0>2}:{:0>2}:{:0>2}".format(
                             int(hours), int(minutes), int(seconds)
                         )
-
 
                     t_end = timer()
                     print(
