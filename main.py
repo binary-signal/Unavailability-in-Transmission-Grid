@@ -23,14 +23,14 @@ def human_time(start, end, msg=""):
     )
 
 
-def start_recovery():
+def start_recovery(name_format):
     logging.info("resuming session starting recovery process")
     recovery_file_path = os.path.join(out, name_format + ".csv")
     try:
         fp = open(recovery_file_path, "r")
     except FileNotFoundError:
-        logging.error(f"Recovery file is missing: {recovery_file_path}")
-        sys.exit(-1)
+        logging.info(f"no recovery file found: {recovery_file_path}")
+        return []
     else:
         # load file names from output dir
         files = [
@@ -54,8 +54,13 @@ def start_recovery():
             if row["detailId"] not in ids
         ]
 
-    random.shuffle(pending)
-    return pending
+        if len(pending) > 0:
+            random.shuffle(pending)
+            return pending
+        elif len(pending) == 0 :
+            logging.info("session is already completed go grab a cup of coffee !")
+            sys.exit(0)
+
 
 
 if __name__ == "__main__":
@@ -152,10 +157,11 @@ if __name__ == "__main__":
     )
 
     exit_code = 0
+    ids_interval = start_recovery(name_format)
+
     try:
-        if args.resume:
-            ids_interval = start_recovery()
-        else:
+        # no recovery file found start from the beginning
+        if len(ids_interval) is 0:
             # fetch data
             data = client.transmission_grid_unavailability(
                 from_date=from_date,
