@@ -722,23 +722,27 @@ class EntsoeAPI(object):
         connection=5,
         backoff_factor=0.5,
         conn_rst_int=300,
+        pause_req=100,
+        pause_int=30,
+        req_delay=3,
     ):
         self.connection = connection
         self.backoff_factor = backoff_factor
         self.conn_rst_int = conn_rst_int
+        self.pause_req = pause_req
+        self.pause_int = pause_int
+        self.req_delay = req_delay
         if items_per_page not in self.__pagination:
-            raise ValueError("item_per_page domain is (10, 25, 50, 100)")
+            raise RuntimeError("item_per_page domain is (10, 25, 50, 100)")
         self.items_per_page = items_per_page
         self.requests_num = 0
-        self.session = requests.Session()
-        retry = Retry(connect=connection, backoff_factor=backoff_factor)
-        adapter = HTTPAdapter(max_retries=retry)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
+        self.session = self.__renew_session()
         self.s_time = timer()
 
-    def __restart_session(self):
-        self.session.close()
+    def __renew_session(self):
+        if hasattr(self, "property"):
+            self.session.close()
+            self.session = None
         self.session = requests.Session()
         retry = Retry(
             connect=self.connection, backoff_factor=self.backoff_factor
@@ -748,6 +752,7 @@ class EntsoeAPI(object):
         self.session.mount("https://", adapter)
         self.__post_headers.update({"User-Agent": random.choice(user_agents)})
         self.__get_headers.update({"User-Agent": random.choice(user_agents)})
+        return self.session
 
     def __post(self, url, params, data):
         """
@@ -809,7 +814,11 @@ class EntsoeAPI(object):
         if t_now - self.s_time > self.conn_rst_int:
             self.s_time = t_now
             logging.info("make new connection to server and change user-agent ")
-            self.__restart_session()
+            self.__renew_session()
+
+        if self.requests_num > 0 and self.requests_num % self.pause_req == 0:
+            logging.info("pausing for a while ")
+            time.sleep(self.pause_int)
 
         self.requests_num += 1
         if method not in self.__endpoints:
@@ -945,7 +954,6 @@ class EntsoeAPI(object):
             )
 
             if have == json_data["iTotalRecords"]:
-                print("\n")
                 logging.info("data  download completed\n\n")
                 break
         return table_data
@@ -1135,7 +1143,6 @@ class EntsoeAPI(object):
         stop_offset=0,
         batch_size=None,
         batch_progress=None,
-        delay=1,
     ):
         """
         Implements api method getDetailCurve
@@ -1180,7 +1187,7 @@ class EntsoeAPI(object):
             elif have >= stop_offset:
                 break
             else:
-                time.sleep(delay)
+                time.sleep(self.req_delay)
 
         return timeseries_data
 
@@ -1202,15 +1209,14 @@ class EntsoeAPI(object):
     def __unix_timestamp_mill():
         return "{:.10f}".format(time.time() * 1000).split(".")[0]
 
-    @staticmethod
-    def details_grid_unavailability_batch(api, detail_id_list, delay=1):
+    def details_grid_unavailability_batch(self, detail_id_list):
         logging.info("start downloading detail data\n")
         total = len(detail_id_list)
         detail_data = []
         for progress, i in enumerate(detail_id_list):
             try:
-                detail = api.details_grid_unavailability(i)
-                detail = api.parse_data_details(detail)
+                detail = self.details_grid_unavailability(i)
+                detail = self.parse_data_details(detail)
             except Exception as error:
                 logging.error(error)
                 raise error from None
@@ -1219,48 +1225,44 @@ class EntsoeAPI(object):
                 prog = round(100 * ((progress + 1) / total))
                 print(f"[2/3] detail {'{:4d}'.format(prog)}%", end="\r")
                 logging.info(f"progress [{progress + 1} / {total}] detail {i}")
-                time.sleep(delay)
+                time.sleep(self.req_delay)
 
         logging.info("detail download completed\n\n")
-        print("\n")
         return detail_data
 
-    @staticmethod
     def curve_grid_unavailability_batch(
-        api, detail_id_list, from_date, to_date, name_format, out_dir, delay=1
+        self, detail_id_list, from_date, to_date, name_format, out_dir
     ):
         total = len(detail_id_list)
 
         logging.info("start downloading time series data\n")
         for progress, i in enumerate(detail_id_list):
 
-            offset, stop_offset = api.pagination_offsets(
+            offset, stop_offset = self.pagination_offsets(
                 i[1], i[2], from_date, to_date
             )
 
             try:
-                timeseries = api.curve_grid_unavailability(
+                timeseries = self.curve_grid_unavailability(
                     i[0],
                     offset,
                     stop_offset,
                     batch_progress=progress + 1,
                     batch_size=total,
-                    delay=delay,
                 )
             except Exception as error:
                 logging.error(error)
                 raise error from None
             else:
-                ts_df = api.curve_to_df(timeseries)
+                ts_df = self.curve_to_df(timeseries)
                 ts_df.to_csv(
                     os.path.join(out_dir, f"{name_format}_{i[0]}.csv"),
                     header=ts_df.columns,
                 )
-                time.sleep(delay)
+                time.sleep(self.req_delay)
 
             prog = round(100 * ((progress + 1) / total))
             print(f"[3/3] series {'{:4d}'.format(prog)}%", end="\r")
-        print("\n")
         logging.info("time series download completed\n\n")
 
     @staticmethod
