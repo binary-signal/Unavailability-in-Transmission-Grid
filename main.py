@@ -13,19 +13,15 @@ import entsoe_client
 CONF_FILE = "config.json"
 
 
-def human_time(start, end, msg=""):
+def human_time(start, end):
     hours, rem = divmod(end - start, 3600)
     minutes, seconds = divmod(rem, 60)
-    print(
-        "{} {:0>2}:{:0>2}:{:0>2}".format(
-            msg, int(hours), int(minutes), int(seconds)
-        )
-    )
+    return "{:0>2}:{:0>2}:{:0>2}".format(int(hours), int(minutes), int(seconds))
 
 
 def start_recovery(name_format):
     logging.info("resuming session starting recovery process")
-    recovery_file_path = os.path.join(out, name_format + ".csv")
+    recovery_file_path = os.path.join(data_dir, name_format + ".csv")
     try:
         fp = open(recovery_file_path, "r")
     except FileNotFoundError:
@@ -35,8 +31,8 @@ def start_recovery(name_format):
         # load file names from output dir
         files = [
             f
-            for f in os.listdir(out)
-            if os.path.isfile(os.path.join(out, f))
+            for f in os.listdir(data_dir)
+            if os.path.isfile(os.path.join(data_dir, f))
             if name_format + ".csv" not in str(f)
         ]
 
@@ -57,10 +53,11 @@ def start_recovery(name_format):
         if len(pending) > 0:
             random.shuffle(pending)
             return pending
-        elif len(pending) == 0 :
-            logging.info("session is already completed go grab a cup of coffee !")
+        elif len(pending) == 0:
+            logging.info(
+                "session is already completed go grab a cup of coffee !"
+            )
             sys.exit(0)
-
 
 
 if __name__ == "__main__":
@@ -90,63 +87,28 @@ if __name__ == "__main__":
         with open(CONF_FILE, "r") as fp:
             config = json.load(fp)
     except OSError:
-        raise RuntimeError("config file is missing")
+        print("config file is missing")
+        sys.exit(-1)
     except ValueError as error:
-        raise RuntimeError(
-            f"config file is corrupted check " f"in config file: \n'{error}'"
-        )
+        print(f"config file is corrupted check " f"in config file: \n'{error}'")
+        sys.exit(-1)
     else:
         advanced = config["advanced"]
         session = config["session"]
 
-    out = advanced["data_dir"]
-    time_delay = advanced["time_delay"]
-    skip_details = advanced["skip_details"]
-    connection = advanced["connection"]
-    backoff_factor = advanced["backoff_factor"]
-
-    try:
-        os.mkdir(out)
-    except FileExistsError:
-        pass
-
-    # setup logging
-    rootLogger = logging.getLogger("")
-    if args.verbose:
-        rootLogger.setLevel(logging.INFO)
-
-        fileHandler = logging.FileHandler(advanced["log_file"], mode="w")
-        f_format = logging.Formatter(
-            fmt="%(asctime)-5s " "[%(levelname)-5.5s]  %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-
-        fileHandler.setFormatter(f_format)
-        rootLogger.addHandler(fileHandler)
-
-    logging.getLogger(__name__)
-
-    logging.info("\n" * 5 + "\t" * 3 + "--" * 10 + "  Session " + "--" * 10)
-    t_total = timer()
-    client = entsoe_client.EntsoeAPI(
-        connection=connection, backoff_factor=backoff_factor, items_per_page=100
-    )
-
-    """
-    scrape params 
-    
-    Note: To decrease scrapping time and avoid
-    getting banned from the server side, set country param.
-    """
-
+    # read scrape params - session
+    print(f"reading config file {CONF_FILE}")
     try:
         from_date = session["from_date"]
         to_date = session["to_date"]
         area_type = session["area_type"]
+        country = session["country"]
     except KeyError as error:
-        sys.exit(f"required param '{error}' is missing in config file")
+        print(
+            f"error while parsing {CONF_FILE}, required param '{error}' is missing in config file"
+        )
+        sys.exit(-1)
 
-    country = session.pop("country", None)
     asset_type = session.pop("asset_type", None)
     outage_status = session.pop("outage_status", None)
     outage_type = session.pop("outage_type", None)
@@ -155,6 +117,62 @@ if __name__ == "__main__":
         f"{country}_{area_type}_{from_date.replace('.', '_')}"
         f"_{to_date.replace('.', '_')}"
     )
+
+    # read advanced config - session
+    log_file = advanced.pop("log_file", False)
+    req_delay = advanced.pop("request_delay", 3)
+    data_dir = advanced.pop("data_dir", "session_data")
+    connection = advanced.pop("connection", 10)
+    backoff_factor = advanced.pop("backoff_factor", 0.5)
+    skip_details = advanced.pop("skip_details", False)
+    skip_timeseries = advanced.pop("skip_timeseries", False)
+    pause_req = advanced.pop("pause_after_requests", 100)
+    pause_int = advanced.pop("pause_internal", 30)
+    conn_rst_int = advanced.pop("connection_reset_interval", 300)
+
+    try:
+        os.mkdir(data_dir)
+    except FileExistsError:
+        pass
+
+    # setup logging
+    rootLogger = logging.getLogger("")
+    if args.verbose:
+        rootLogger.setLevel(logging.INFO)
+
+    if log_file:
+        fileHandler = logging.FileHandler(name_format + ".log", mode="w")
+        fileLogFormatter = logging.Formatter(
+            "%(asctime)s %(name)s [%(levelname)-5.5s]  %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        fileHandler.setFormatter(fileLogFormatter)
+        rootLogger.addHandler(fileHandler)
+
+    consoleLogFormatter = logging.Formatter("[%(levelname)-5.5s]  %(message)s")
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(consoleLogFormatter)
+    rootLogger.addHandler(consoleHandler)
+
+    logging.getLogger(__name__)
+
+    logging.info("\n" * 5 + "\t" * 3 + "--" * 10 + "  Session " + "--" * 10)
+    t_total = timer()
+    client = entsoe_client.EntsoeAPI(
+        connection=connection,
+        backoff_factor=backoff_factor,
+        items_per_page=100,
+        pause_req=pause_req,
+        pause_int=pause_int,
+        conn_rst_int=conn_rst_int,
+        req_delay=req_delay,
+    )
+
+    if skip_details:
+        logging.info("skip detail download")
+
+    if skip_timeseries:
+        logging.info("skip timeseries download")
 
     exit_code = 0
     ids_interval = start_recovery(name_format)
@@ -174,19 +192,17 @@ if __name__ == "__main__":
             )
 
             if not skip_details:
-                logging.info("skip details download")
                 # fetch details for data
                 ids = [d["detailId"] for d in data]
-                details = entsoe_client.EntsoeAPI.details_grid_unavailability_batch(
-                    client, ids, delay=time_delay
-                )
+                details = client.details_grid_unavailability_batch(ids)
 
                 # merge data and detail into a single data frame and output as csv
                 data = [{**dat, **det} for dat, det in zip(data, details)]
 
             data_df = pd.DataFrame(data)
             data_df.to_csv(
-                os.path.join(out, f"{name_format}.csv"), header=data_df.columns
+                os.path.join(data_dir, f"{name_format}.csv"),
+                header=data_df.columns,
             )
 
             # download time series data
@@ -199,15 +215,15 @@ if __name__ == "__main__":
                 for row in data
             ]
 
-        entsoe_client.EntsoeAPI.curve_grid_unavailability_batch(
-            client,
-            ids_interval,
-            from_date,
-            to_date,
-            delay=time_delay,
-            out_dir=out,
-            name_format=name_format,
-        )
+        print(f"todate {to_date}")
+        if not skip_timeseries:
+            client.curve_grid_unavailability_batch(
+                ids_interval,
+                from_date,
+                to_date,
+                name_format=name_format,
+                out_dir=data_dir,
+            )
 
     except KeyboardInterrupt:
         logging.info("session terminated by user")
@@ -217,10 +233,9 @@ if __name__ == "__main__":
         exit_code = -1
     else:
         logging.info("session completed successfully")
-        print("Done")
+        print("Done.")
         exit_code = 0
     finally:
-        human_time(t_total, timer(), "run time")
-        logging.info(f"#requests {client.requests_num}")
-        print(f"#requests {client.requests_num}")
+        time = human_time(t_total, timer())
+        logging.info(f"requests: {client.requests_num} | time:{time}")
         sys.exit(exit_code)
