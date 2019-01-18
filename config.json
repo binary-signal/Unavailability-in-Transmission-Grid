@@ -2,21 +2,6 @@
   "session": {
     "from_date": "01.01.2018",
     "to_date": "15.01.2018",
-    "country": "IT",
-    "asset_type": [
-      "AC Link",
-      "DC Link",
-      "Substation",
-      "Transformer",
-      "Not specified"
-    ],
-    "outage_status": [
-      "Active"
-    ],
-    "outage_type": [
-      "Forced",
-      "Planned"
-    ],
-    "area_type": "BORDER_BZN"
+    "country": "IT"
   }
 }
