@@ -813,7 +813,9 @@ class EntsoeAPI(object):
         t_now = timer()
         if t_now - self.s_time > self.conn_rst_int:
             self.s_time = t_now
-            logging.info("make new connection to server and change user-agent ")
+            logging.info(
+                "make new connection to server and change user-agent "
+            )
             self.__renew_session()
 
         if self.requests_num > 0 and self.requests_num % self.pause_req == 0:
