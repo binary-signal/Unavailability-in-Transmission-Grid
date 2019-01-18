@@ -90,7 +90,10 @@ if __name__ == "__main__":
         )
         sys.exit(-1)
     else:
-        advanced = config["advanced"]
+        try:
+            advanced = config["advanced"]
+        except KeyError:
+            advanced ={}
         session = config["session"]
 
     # read scrape params - session
