@@ -1,8 +1,8 @@
 {
   "session": {
     "from_date": "01.01.2018",
-    "to_date": "15.01.2019",
-    "country": "AT",
+    "to_date": "15.01.2018",
+    "country": "IT",
     "asset_type": [
       "AC Link",
       "DC Link",
@@ -18,13 +18,5 @@
       "Planned"
     ],
     "area_type": "BORDER_BZN"
-  },
-  "advanced": {
-    "log_file": "logs.log",
-    "time_delay": 2,
-    "data_dir": "session_data",
-    "connection": 10,
-    "backoff_factor": 0.5,
-    "skip_details": true
   }
 }
