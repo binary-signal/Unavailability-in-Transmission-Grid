@@ -3,16 +3,6 @@
 """
  Dead simple supervisor for python scripts to ensure
  script terminated normally and got the job done.
-
-
- Why to use this ?
-
- tl;dr Programmed a web crawler which  crashed many times
- while it was crawling for data, internet went down, got
- banned from servers lots of things can go wrong in the
- wild internet. Needed a way to automatically monitor the
- crawler and restart it when it crashed until it crawled
- all the data I needed.
 """
 
 import subprocess
