@@ -16,7 +16,9 @@ CONF_FILE = "config.json"
 def human_time(start, end):
     hours, rem = divmod(end - start, 3600)
     minutes, seconds = divmod(rem, 60)
-    return "{:0>2}:{:0>2}:{:0>2}".format(int(hours), int(minutes), int(seconds))
+    return "{:0>2}:{:0>2}:{:0>2}".format(
+        int(hours), int(minutes), int(seconds)
+    )
 
 
 def start_recovery(name_format):
@@ -90,7 +92,9 @@ if __name__ == "__main__":
         print("config file is missing")
         sys.exit(-1)
     except ValueError as error:
-        print(f"config file is corrupted check " f"in config file: \n'{error}'")
+        print(
+            f"config file is corrupted check " f"in config file: \n'{error}'"
+        )
         sys.exit(-1)
     else:
         advanced = config["advanced"]
