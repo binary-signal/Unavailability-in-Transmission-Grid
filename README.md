@@ -28,15 +28,25 @@ open a terminal
 #### Run with 
 `pipenv run python main.py`
 
+#### Run with supevisor
+Most of the times running main.py alone will end up in a crash, due to network
+connectivity, server closing the connection or even refusing to serve your requests.
+To avoid this run main.py inside supervisor.py which restarts the scrapper when it crashes
+until it completes it's tasks.
+
+`pipenv run python supervisor.py main.py -v`
+
 #### Verbose logging 
-Produce more detailed log messages and save them to a file by setting -v flag.
-Every time the file main.py is executed, log file is overwritten.
+Produce more detailed log messages  -v flag.
+Every time the file main.py is executed, log file is overwritten if you have
+enabled the option to save logs to file, need to add this to config.json.
 
 `pipenv run python main.py -v`
 
 #### Config file
 The script needs a config file formatted as JSON. A missing or corrupted config
-file will produce a runtime error.
+file will produce a runtime error. You only need to fill in "session" fields,
+you can leave empty or completely remove "advanced" fields.
 
 A simple config.json
 ``` {
