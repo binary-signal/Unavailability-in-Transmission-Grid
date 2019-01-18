@@ -858,11 +858,13 @@ class EntsoeAPI(object):
         """
         Implements api method to get unavailability in transmission grid
         """
+
         if country is None:
             borders = "ALL"
         else:
-            if country not in self.__countries:
+            if country is not None and country not in self.__countries:
                 raise RuntimeError(f"Country code: {country} is invalid")
+
             if "BORDER_CTA" in area_type:
                 borders = self.__cta_borders[country]
             elif "BORDER_BZN" in area_type:
