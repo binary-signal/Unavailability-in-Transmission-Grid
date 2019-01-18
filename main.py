@@ -10,8 +10,6 @@ import pandas as pd
 
 import entsoe_client
 
-CONF_FILE = "config.json"
-
 
 def human_time(start, end):
     hours, rem = divmod(end - start, 3600)
@@ -62,9 +60,54 @@ def start_recovery(name_format):
             sys.exit(0)
 
 
+def read_from_config_file():
+    CONF_FILE = "config.json"
+    # read config file
+    try:
+        with open(CONF_FILE, "r") as fp:
+            config = json.load(fp)
+    except OSError:
+        print("config file is missing")
+        sys.exit(-1)
+    except ValueError as error:
+        print(f"config file is corrupted check in config file: \n'{error}'")
+        sys.exit(-1)
+    else:
+        try:
+            advanced = config["advanced"]
+        except KeyError:
+            advanced = {}
+            session = {}
+
+    # read scrape params - session
+    print(f"reading config file {CONF_FILE}")
+    try:
+        from_date = session.pop("from_date")
+        to_date = session.pop("to_date")
+    except KeyError as error:
+        print(
+            f"error while parsing {CONF_FILE}, required param '{error}' is missing in config file"
+        )
+        sys.exit(-1)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Unavailability in Transmission Grid"
+    )
+    parser.add_argument("fromDate", help="start date in dd.mm.YYYY format")
+    parser.add_argument("toDate", help="end date in dd.mm.YYYY format")
+    parser.add_argument(
+        "-c",
+        "--country",
+        help="2 letter country code, defaults: ALL",
+        default=None,
+    )
+    parser.add_argument(
+        "-art",
+        "--area-type",
+        help="specify area type [BORDER_BZN | BORDER_CTA], defaults: BORDER_BZN",
+        default="BORDER_BZN",
     )
     parser.add_argument(
         "-v",
@@ -76,39 +119,13 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    session = vars(args)
+    advanced = {}
 
-    # read config file
-    try:
-        with open(CONF_FILE, "r") as fp:
-            config = json.load(fp)
-    except OSError:
-        print("config file is missing")
-        sys.exit(-1)
-    except ValueError as error:
-        print(
-            f"config file is corrupted check " f"in config file: \n'{error}'"
-        )
-        sys.exit(-1)
-    else:
-        try:
-            advanced = config["advanced"]
-        except KeyError:
-            advanced ={}
-        session = config["session"]
-
-    # read scrape params - session
-    print(f"reading config file {CONF_FILE}")
-    try:
-        from_date = session["from_date"]
-        to_date = session["to_date"]
-        area_type = session["area_type"]
-        country = session["country"]
-    except KeyError as error:
-        print(
-            f"error while parsing {CONF_FILE}, required param '{error}' is missing in config file"
-        )
-        sys.exit(-1)
-
+    from_date = session.pop("fromDate")
+    to_date = session.pop("toDate")
+    area_type = session.pop("area_type", "BORDER_BZB")
+    country = session.pop("country", None)
     asset_type = session.pop("asset_type", None)
     outage_status = session.pop("outage_status", None)
     outage_type = session.pop("outage_type", None)
@@ -215,7 +232,6 @@ if __name__ == "__main__":
                 for row in data
             ]
 
-        print(f"todate {to_date}")
         if not skip_timeseries:
             client.curve_grid_unavailability_batch(
                 ids_interval,
