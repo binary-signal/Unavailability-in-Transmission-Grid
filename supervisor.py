@@ -89,9 +89,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Supervisor for python scripts"
     )
-    parser.add_argument("script", help="Input python file")
+    parser.add_argument("script", help="python script")
     parser.add_argument(
-        "args", help="Args passed to script", nargs="*", default=[]
+        "args", help="arguments passed to the script", nargs="*", default=[]
     )
     args = parser.parse_args()
     main([args.script, *args.args])
