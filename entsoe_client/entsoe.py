@@ -862,13 +862,19 @@ class EntsoeAPI(object):
         if country is None:
             borders = "ALL"
         else:
-            if country is not None and country not in self.__countries:
-                raise RuntimeError(f"Country code: {country} is invalid")
-
-            if "BORDER_CTA" in area_type:
-                borders = self.__cta_borders[country]
-            elif "BORDER_BZN" in area_type:
-                borders = self.__bzn_borders[country]
+            if country:
+                if "ALL" in country:
+                    borders = "ALL"
+                else:
+                    if country not in self.__countries:
+                        raise RuntimeError(
+                            f"Country code: {country} is invalid"
+                        )
+                    else:
+                        if "BORDER_CTA" in area_type:
+                            borders = self.__cta_borders[country]
+                        elif "BORDER_BZN" in area_type:
+                            borders = self.__bzn_borders[country]
         if asset_type is None:
             asset_type = self.__asset_type
         if outage_type is None:
@@ -1058,86 +1064,80 @@ class EntsoeAPI(object):
         html_tables = self.api_call("detail", params=params)
         soup = BeautifulSoup(html_tables, "lxml")
 
-        details_data = []
         tables = soup.find_all("table")
+
+        comments = []
+        reasson = []
+        affected_assets = []
         for t_id, table in enumerate(tables):
-            table_rows = table.find_all("tr")
 
-            for r_id, tr in enumerate(table_rows):
-                row = []
-                td = tr.find_all("td")
+            if t_id is 0:  # this is comments table
+                table_rows = table.find_all("tr")[1:]
+                for r_id, tr in enumerate(table_rows):
+                    comments.append(tr.text.strip())
 
-                for elem in td:
-                    if elem.get("class"):
-                        """
-                        Decode Asset Types
-                        -----------------
-                            B21 : AC Link
-                            B22 : DC Link
-                            B23 : Substation
-                            B24 : Transformer
-                            UNKNOWN: Not specified
-                        """
+                comments = list(set(comments))
 
-                        if "B21" in elem.get("class")[0]:
-                            row.append("AC Link")
-                        elif "B22" in elem.get("class")[0]:
-                            row.append("DC Link")
-                        elif "B23" in elem.get("class")[0]:
-                            row.append("Substation")
-                        elif "B23" in elem.get("class")[0]:
-                            row.append("Transformer")
-                        elif "UNKNOWN" in elem.get("class")[0]:
-                            row.append("Not specified")
-                    else:
-                        row.append(elem.text.strip())
+            elif t_id is 1:  # this is reason table
+                table_rows = table.find_all("tr")[1:]
+                for r_id, tr in enumerate(table_rows):
+                    reasson.append(tr.text.strip())
 
-                if row:
-                    details_data += row
+                reasson = list(set(reasson))
 
-        # hack remove duplicate failure status in details
-        if details_data.count("Failure") == 2:
-            details_data.remove("Failure")
+            elif t_id is 2:  # this is affected assets table
 
-        # hack remove duplicate failure status in details
-        if details_data.count("Foreseen Maintenance") == 2:
-            details_data.remove("Foreseen Maintenance")
+                table_rows = table.find_all("tr")[2:]
 
-        if len(details_data) != 6:
-            # hack fill in missing values in Affected Assets when there are
-            # No Affected Assets
-            # logging.warning("Row id {} has missing data, fill in "
-            #                "missing values".format(detail_id))
-            for i in range(6 - len(details_data)):
-                details_data.append(details_data[-1])
+                rows = []
+                for r_id, tr in enumerate(table_rows):
 
-        # add detailId to each detail table for easy indexing
-        details_data.append(detail_id)
-        return details_data
+                    row = []
+                    td = tr.find_all("td")
+
+                    for elem in td:
+                        if elem.get("class"):
+                            """
+                            Decode Asset Types
+                            -----------------
+                                B21 : AC Link
+                                B22 : DC Link
+                                B23 : Substation
+                                B24 : Transformer
+                                UNKNOWN: Not specified
+                            """
+
+                            if "B21" in elem.get("class")[0]:
+                                row.append("AC Link")
+                            elif "B22" in elem.get("class")[0]:
+                                row.append("DC Link")
+                            elif "B23" in elem.get("class")[0]:
+                                row.append("Substation")
+                            elif "B24" in elem.get("class")[0]:
+                                row.append("Transformer")
+                            elif "UNKNOWN" in elem.get("class")[0]:
+                                row.append("Not specified")
+                        else:
+                            row.append(elem.text.strip())
+                    if len(row) is 1:
+                        row = [row[0] for i in range(4)]
+                    affected_assets.append(row)
+        return comments, reasson, affected_assets
 
     @staticmethod
-    def parse_data_details(tables_data):
+    def parse_data_details(comments, reason, asset, detailId):
         """
         Parses data returned from details_grid_unavailability method
         """
 
-        if len(tables_data) < 7:
-            raise EntsoeApiExcetpion(
-                f"invalid  size for details : " f"{tables_data}"
-            )
-
-        if len(tables_data) > 7:
-            # FIXME fix this shit
-            logging.warning("Affected assets two rows")
-
         return {
-            "comments": tables_data[0],
-            "reason": tables_data[1],
-            "code": tables_data[2],
-            "type": tables_data[3],
-            "name": tables_data[4],
-            "location": tables_data[5],
-            "detailId": tables_data[6],
+            "comments": " ".join(comments),
+            "reason": " ".join(reason),
+            "code": asset[0],
+            "type": asset[1],
+            "name": asset[2],
+            "location": asset[3],
+            "detailId": detailId,
         }
 
     def curve_grid_unavailability(
@@ -1219,13 +1219,18 @@ class EntsoeAPI(object):
         detail_data = []
         for progress, i in enumerate(detail_id_list):
             try:
-                detail = self.details_grid_unavailability(i)
-                detail = self.parse_data_details(detail)
+                comments, reason, affected_assets = self.details_grid_unavailability(
+                    i
+                )
             except Exception as error:
-                logging.error(error)
+                logging.exception(error)
                 raise error from None
             else:
-                detail_data.append(detail)
+                for asset in affected_assets:
+                    detail = self.parse_data_details(
+                        comments, reason, asset, i
+                    )
+                    detail_data.append(detail)
                 prog = round(100 * ((progress + 1) / total))
                 print(f"[2/3] detail {'{:4d}'.format(prog)}%", end="\r")
                 logging.info(f"progress [{progress + 1} / {total}] detail {i}")
@@ -1255,7 +1260,7 @@ class EntsoeAPI(object):
                     batch_size=total,
                 )
             except Exception as error:
-                logging.error(error)
+                logging.exception(error)
                 raise error from None
             else:
                 ts_df = self.curve_to_df(timeseries)
