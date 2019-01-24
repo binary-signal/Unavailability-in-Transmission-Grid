@@ -233,7 +233,7 @@ if __name__ == "__main__":
                 details_df = pd.DataFrame(details)
 
                 data_df = pd.merge(
-                    data_df, details_df, on="detailId", how="outer"
+                    data_df, details_df, on="detailId", how="left"
                 )
                 # merge data and detail into a single data frame and output as csv
                 # data = [{**dat, **det} for dat, det in zip(data, details)]
