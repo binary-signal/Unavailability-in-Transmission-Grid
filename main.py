@@ -5,6 +5,7 @@ import os
 import sys
 from timeit import default_timer as timer
 import random
+import datetime
 
 import pandas as pd
 
@@ -95,13 +96,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Unavailability in Transmission Grid"
     )
-    parser.add_argument("fromDate", help="start date in dd.mm.YYYY format")
-    parser.add_argument("toDate", help="end date in dd.mm.YYYY format")
+    parser.add_argument(
+        "-s" "--fromDate", help="start date in dd.mm.YYYY format", default=None
+    )
+    parser.add_argument(
+        "-e", "--toDate", help="end date in dd.mm.YYYY format", default=None
+    )
     parser.add_argument(
         "-c",
         "--country",
         help="2 letter country code, defaults: ALL",
-        default=None,
+        default="ALL",
     )
     parser.add_argument(
         "-art",
@@ -122,10 +127,22 @@ if __name__ == "__main__":
     session = vars(args)
     advanced = {}
 
-    from_date = session.pop("fromDate")
-    to_date = session.pop("toDate")
+    from_date = session.pop("fromDate", None)
+    if from_date is None:
+        from_date = datetime.datetime.strftime(
+            datetime.datetime.now() - datetime.timedelta(days=1),
+            "%d.%m.%Y %H:%M",
+        ).split(" ")[0]
+
+    to_date = session.pop("toDate", None)
+    if to_date is None:
+        to_date = datetime.datetime.strftime(
+            datetime.datetime.now() + datetime.timedelta(days=1),
+            "%d.%m.%Y %H:%M",
+        ).split(" ")[0]
+
     area_type = session.pop("area_type", "BORDER_BZB")
-    country = session.pop("country", None)
+    country = session.pop("country", "ALL")
     asset_type = session.pop("asset_type", None)
     outage_status = session.pop("outage_status", None)
     outage_type = session.pop("outage_type", None)
@@ -207,19 +224,23 @@ if __name__ == "__main__":
                 asset_type=asset_type,
                 outage_status=outage_status,
             )
+            data_df = pd.DataFrame(data)
 
             if not skip_details:
                 # fetch details for data
                 ids = [d["detailId"] for d in data]
                 details = client.details_grid_unavailability_batch(ids)
+                details_df = pd.DataFrame(details)
 
+                data_df = pd.merge(
+                    data_df, details_df, on="detailId", how="outer"
+                )
                 # merge data and detail into a single data frame and output as csv
-                data = [{**dat, **det} for dat, det in zip(data, details)]
+                # data = [{**dat, **det} for dat, det in zip(data, details)]
 
-            data_df = pd.DataFrame(data)
             data_df.to_csv(
                 os.path.join(data_dir, f"{name_format}.csv"),
-                header=data_df.columns,
+                header=data_df.columns, index=False
             )
 
             # download time series data
@@ -245,7 +266,7 @@ if __name__ == "__main__":
         logging.info("session terminated by user")
         exit_code = 0
     except Exception as error:
-        logging.error(error)
+        logging.exception(error)
         exit_code = -1
     else:
         logging.info("session completed successfully")
