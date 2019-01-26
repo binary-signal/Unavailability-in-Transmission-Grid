@@ -10,7 +10,6 @@ import time
 import sys
 import os
 import timeit
-import argparse
 
 RETRY_INTERVAL = 30  # wait seconds before running again after crashing
 
@@ -86,13 +85,7 @@ def main(super_args):
 
 
 if __name__ == "__main__":
-    #parser = argparse.ArgumentParser(
-    #    description="Supervisor for python scripts"
-    #)
-    #parser.add_argument("script", help="python script")
-    #parser.add_argument(
-    #    "args", help="arguments passed to the script", nargs="*", default=[]
-    #)
-    #args = parser.parse_args()
-    #main([args.script, *args.args])
+    if len(sys.argv[1:]) is 0 or sys.argv[1] in "-h":
+        print("usage: supervisor.py [-h] script [args [args ...]]")
+        sys.exit(0)
     main([sys.argv[1], *sys.argv[2:]])
