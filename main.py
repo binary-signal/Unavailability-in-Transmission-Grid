@@ -97,7 +97,7 @@ if __name__ == "__main__":
         description="Unavailability in Transmission Grid"
     )
     parser.add_argument(
-        "-s" "--fromDate", help="start date in dd.mm.YYYY format", default=None
+        "-s", "--fromDate", help="start date in dd.mm.YYYY format", default=None
     )
     parser.add_argument(
         "-e", "--toDate", help="end date in dd.mm.YYYY format", default=None
@@ -126,6 +126,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     session = vars(args)
     advanced = {}
+
 
     from_date = session.pop("fromDate", None)
     if from_date is None:
