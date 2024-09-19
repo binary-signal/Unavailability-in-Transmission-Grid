@@ -214,7 +214,7 @@ if __name__ == "__main__":
 
     try:
         # no recovery file found start from the beginning
-        if len(ids_interval) is 0:
+        if not ids_interval:
             # fetch data
             data = client.transmission_grid_unavailability(
                 from_date=from_date,
